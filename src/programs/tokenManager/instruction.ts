@@ -55,12 +55,23 @@ export const initMintCounter = async (
   });
 };
 
+export type InitParams = {
+  paymentMint?: PublicKey;
+  paymentAmount?: BN;
+  expiration?: BN;
+  durationSeconds?: BN;
+  maxExpiration?: BN;
+  disablePartialExtension?: boolean;
+  totalUsages?: BN;
+  maxUsages?: BN;
+  invalidators?: PublicKey[];
+};
 export const init = async (
   connection: Connection,
   wallet: Wallet,
   mint: PublicKey,
   issuerTokenAccountId: PublicKey,
-  numInvalidator = 1
+  params: InitParams
 ): Promise<[TransactionInstruction, PublicKey]> => {
   const provider = new Provider(connection, wallet, {});
   const tokenManagerProgram = new Program<TOKEN_MANAGER_PROGRAM>(
@@ -75,16 +86,30 @@ export const init = async (
   ]);
 
   return [
-    tokenManagerProgram.instruction.init(mint, numInvalidator, {
-      accounts: {
-        tokenManager: tokenManagerId,
-        mintCounter: mintCounterId,
-        issuer: wallet.publicKey,
-        payer: wallet.publicKey,
-        issuerTokenAccount: issuerTokenAccountId,
-        systemProgram: SystemProgram.programId,
+    tokenManagerProgram.instruction.init(
+      {
+        mint,
+        paymentMint: params.paymentMint || null,
+        paymentAmount: params.paymentAmount || null,
+        expiration: params.expiration || null,
+        durationSeconds: params.durationSeconds || null,
+        maxExpiration: params.maxExpiration || null,
+        disablePartialExtension: params.disablePartialExtension || null,
+        totalUsages: params.totalUsages || null,
+        maxUsages: params.maxUsages || null,
+        invalidators: params.invalidators || [],
       },
-    }),
+      {
+        accounts: {
+          tokenManager: tokenManagerId,
+          mintCounter: mintCounterId,
+          issuer: wallet.publicKey,
+          payer: wallet.publicKey,
+          issuerTokenAccount: issuerTokenAccountId,
+          systemProgram: SystemProgram.programId,
+        },
+      }
+    ),
     tokenManagerId,
   ];
 };

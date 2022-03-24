@@ -23,8 +23,14 @@ pub struct InvalidateCtx<'info> {
     recipient_token_account: Box<Account<'info, TokenAccount>>,
 
     // invalidator
-    #[account(constraint = token_manager.invalidators.contains(&invalidator.key()) || recipient_token_account.owner == invalidator.key() @ ErrorCode::InvalidInvalidator)]
-    invalidator: Signer<'info>,
+    #[account(constraint =
+        token_manager.invalidators.contains(&invalidator.key())
+        || recipient_token_account.owner == invalidator.key()
+        || token_manager.expiration != None && Clock::get().unwrap().unix_timestamp >= token_manager.expiration.unwrap()
+        || token_manager.state == TokenManagerState::Claimed as u8 && Clock::get().unwrap().unix_timestamp >= token_manager.state_changed_at + token_manager.duration_seconds.unwrap() as i64
+        || token_manager.max_usages != None && token_manager.usages >= token_manager.total_usages.unwrap()
+        @ ErrorCode::InvalidInvalidator)]
+        invalidator: Signer<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     collector: AccountInfo<'info>,

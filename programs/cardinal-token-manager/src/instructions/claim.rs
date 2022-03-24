@@ -1,5 +1,5 @@
 use {
-    crate::{state::*, errors::ErrorCode},
+    crate::{state::*, utils::*, errors::ErrorCode},
     anchor_lang::{prelude::*, solana_program::program::invoke_signed, AccountsClose},
     anchor_spl::{token::{self, Token, TokenAccount, Mint, Transfer, FreezeAccount, Approve}},
     mpl_token_metadata::{instruction::freeze_delegated_account, utils::assert_derivation},
@@ -36,6 +36,41 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
     token_manager.state = TokenManagerState::Claimed as u8;
     token_manager.state_changed_at = Clock::get().unwrap().unix_timestamp;
     let remaining_accs = &mut ctx.remaining_accounts.iter();
+
+    if token_manager.payment_amount != None && token_manager.payment_amount.unwrap() > 0 {
+        let payer_token_account_info = next_account_info(remaining_accs)?;
+        let payment_token_account_info = next_account_info(remaining_accs)?;
+        let payment_manager_token_account_info = next_account_info(remaining_accs)?;
+        let payment_manager_token_account = Account::<TokenAccount>::try_from(payment_manager_token_account_info)?;
+        if payment_manager_token_account.mint != token_manager.payment_mint.unwrap() { return Err(error!(ErrorCode::PublicKeyMismatch)); }
+        assert_payment_manager(&payment_manager_token_account.owner);
+        
+        let payment_token_account = Account::<TokenAccount>::try_from(payment_token_account_info)?;
+        if payment_token_account.mint != token_manager.payment_mint.unwrap() { return Err(error!(ErrorCode::PublicKeyMismatch)); }
+
+        assert_payment_token_account(&payment_token_account, &token_manager, remaining_accs)?;
+        let provider_fee = token_manager.payment_amount.unwrap() * (PROVIDER_FEE / FEE_SCALE);
+        let recipient_fee = token_manager.payment_amount.unwrap() * (RECIPIENT_FEE / FEE_SCALE);
+        if provider_fee + recipient_fee > 0 {
+            let cpi_accounts = Transfer {
+                from: payer_token_account_info.to_account_info(),
+                to: payment_manager_token_account_info.to_account_info(),
+                authority: ctx.accounts.recipient.to_account_info(),
+            };
+            let cpi_program = ctx.accounts.token_program.to_account_info();
+            let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
+            token::transfer(cpi_context, provider_fee + recipient_fee)?;
+        }
+    
+        let cpi_accounts = Transfer {
+            from: payer_token_account_info.to_account_info(),
+            to: payment_token_account_info.to_account_info(),
+            authority: ctx.accounts.recipient.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
+        token::transfer(cpi_context, token_manager.payment_amount.unwrap() - recipient_fee)?;
+    }
 
     // get PDA seeds to sign with
     let token_manager_seeds = &[TOKEN_MANAGER_SEED.as_bytes(), token_manager.mint.as_ref(), &[token_manager.bump]];

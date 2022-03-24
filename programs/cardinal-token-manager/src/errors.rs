@@ -53,4 +53,32 @@ pub enum ErrorCode {
     InvalidReceiptMint,
     #[msg("Invalid current holder token account")]
     InvalidCurrentTokenAccount,
+
+    #[msg("Token account not owned by the claim approver")]
+    InvalidPaymentTokenAccount,
+    #[msg("Token account not owned by the issuer")]
+    InvalidPayerTokenAccount,
+    #[msg("Invalid token manager for this claim approver")]
+    InvalidTokenManager,
+    #[msg("Expiration has not passed yet")]
+    InvalidExpiration,
+    #[msg("Invalid instruction")]
+    InvalidInstruction,
+    #[msg("Max expiration exceeded")]
+    InvalidExtendExpiration,
+    #[msg("Invalid payment mint on time invalidator")]
+    InvalidPaymentMint,
+    #[msg("Invalid extension partial duration not allowed")]
+    InvalidExtensionAmount,
+    #[msg("Token account incorrect mint")]
+    InvalidPaymentManagerTokenAccount,
+
+    #[msg("Token account not owned by the issuer")]
+    InvalidTokenAccount,
+    #[msg("User is not permitted to use")]
+    InvalidUser,
+    #[msg("Usages at the maximum")]
+    InsufficientUsages,
+    #[msg("Max usages reached")]
+    MaxUsagesReached,
 }

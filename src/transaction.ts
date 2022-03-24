@@ -68,20 +68,35 @@ export const withIssueToken = async (
     customInvalidators = undefined,
   }: IssueParameters
 ): Promise<[Transaction, PublicKey, Keypair | undefined]> => {
-  // init token manager
-  const num_invalidators =
-    (customInvalidators ? customInvalidators.length : 0) +
-    (useInvalidation && timeInvalidation
-      ? 2
-      : useInvalidation || timeInvalidation
-      ? 1
-      : 0);
   const [tokenManagerIx, tokenManagerId] = await tokenManager.instruction.init(
     connection,
     wallet,
     mint,
     issuerTokenAccountId,
-    num_invalidators
+    {
+      paymentMint: claimPayment?.paymentMint,
+      paymentAmount: claimPayment?.paymentAmount
+        ? new BN(claimPayment?.paymentAmount)
+        : undefined,
+      expiration: timeInvalidation?.expiration
+        ? new BN(timeInvalidation?.expiration)
+        : undefined,
+      durationSeconds: timeInvalidation?.durationSeconds
+        ? new BN(timeInvalidation?.durationSeconds)
+        : undefined,
+      maxExpiration: timeInvalidation?.extension?.maxExpiration
+        ? new BN(timeInvalidation?.extension?.maxExpiration)
+        : undefined,
+      disablePartialExtension:
+        timeInvalidation?.extension?.disablePartialExtension,
+      totalUsages: useInvalidation?.totalUsages
+        ? new BN(useInvalidation?.totalUsages)
+        : undefined,
+      maxUsages: useInvalidation?.extension?.maxUsages
+        ? new BN(useInvalidation?.extension?.maxUsages)
+        : undefined,
+      invalidators: customInvalidators,
+    }
   );
   transaction.add(tokenManagerIx);
 
@@ -89,27 +104,7 @@ export const withIssueToken = async (
   /////// claim approver ///////
   //////////////////////////////
   let otp;
-  if (claimPayment) {
-    if (visibility === "private") {
-      throw new Error("Private links do not currently support payment");
-    }
-    const [paidClaimApproverIx, paidClaimApproverId] =
-      await claimApprover.instruction.init(
-        connection,
-        wallet,
-        tokenManagerId,
-        claimPayment
-      );
-    transaction.add(paidClaimApproverIx);
-    transaction.add(
-      tokenManager.instruction.setClaimApprover(
-        connection,
-        wallet,
-        tokenManagerId,
-        paidClaimApproverId
-      )
-    );
-  } else if (visibility === "private") {
+  if (visibility === "private") {
     otp = Keypair.generate();
     transaction.add(
       tokenManager.instruction.setClaimApprover(
@@ -119,98 +114,6 @@ export const withIssueToken = async (
         otp.publicKey
       )
     );
-  }
-
-  //////////////////////////////
-  /////// time invalidator /////
-  //////////////////////////////
-  if (timeInvalidation) {
-    const [timeInvalidatorIx, timeInvalidatorId] =
-      await timeInvalidator.instruction.init(
-        connection,
-        wallet,
-        tokenManagerId,
-        timeInvalidation
-      );
-    transaction.add(timeInvalidatorIx);
-    transaction.add(
-      tokenManager.instruction.addInvalidator(
-        connection,
-        wallet,
-        tokenManagerId,
-        timeInvalidatorId
-      )
-    );
-  } else {
-    const [timeInvalidatorId] =
-      await timeInvalidator.pda.findTimeInvalidatorAddress(tokenManagerId);
-    const timeInvalidatorData = await tryGetAccount(() =>
-      timeInvalidator.accounts.getTimeInvalidator(connection, timeInvalidatorId)
-    );
-    if (timeInvalidatorData) {
-      transaction.add(
-        timeInvalidator.instruction.close(
-          connection,
-          wallet,
-          timeInvalidatorId,
-          tokenManagerId
-        )
-      );
-    }
-  }
-
-  //////////////////////////////
-  /////////// usages ///////////
-  //////////////////////////////
-  if (useInvalidation) {
-    const [useInvalidatorIx, useInvalidatorId] =
-      await useInvalidator.instruction.init(
-        connection,
-        wallet,
-        tokenManagerId,
-        useInvalidation
-      );
-    transaction.add(useInvalidatorIx);
-    transaction.add(
-      tokenManager.instruction.addInvalidator(
-        connection,
-        wallet,
-        tokenManagerId,
-        useInvalidatorId
-      )
-    );
-  } else {
-    const [useInvalidatorId] =
-      await useInvalidator.pda.findUseInvalidatorAddress(tokenManagerId);
-    const useInvalidatorData = await tryGetAccount(() =>
-      useInvalidator.accounts.getUseInvalidator(connection, useInvalidatorId)
-    );
-    if (useInvalidatorData) {
-      transaction.add(
-        useInvalidator.instruction.close(
-          connection,
-          wallet,
-          useInvalidatorId,
-          tokenManagerId
-        )
-      );
-    }
-  }
-
-  /////////////////////////////////////////
-  //////////// custom invalidators ////////
-  /////////////////////////////////////////
-  if (customInvalidators) {
-    for (const invalidator of customInvalidators) {
-      transaction.add(
-        tokenManager.instruction.addInvalidator(
-          connection,
-          wallet,
-          tokenManagerId,
-          invalidator
-        )
-      );
-    }
   }
 
   if (kind === TokenManagerKind.Managed) {
@@ -249,7 +152,7 @@ export const withIssueToken = async (
   );
 
   //////////////////////////////
-  //////////// index ///////////
+  //////////// receipt ///////////
   //////////////////////////////
   if (receiptOptions) {
     const { receiptMintKeypair } = receiptOptions;

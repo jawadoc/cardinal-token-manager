@@ -38,28 +38,65 @@ pub enum InvalidationType {
 }
 
 pub fn token_manager_size(num_invalidators: usize) -> usize {
-    return (8 + 1 + 1 + 8 + 1 + 32 + 32 + 8 + 1 + 1 + 8 + 1 + 32 + 33 + 33 + 33 + num_invalidators * 32) + 8 as usize
+    return (8 + 1 + 1 + 8 + 1 + 32 + 32 + 8 + 1 + 1 + 8 + 1 + 32 + 33 + 16 + 16 + 16 + 1 + 16 + 16 + 16 + 33 + 33 + 33 + num_invalidators * 32) + 8 as usize
 }
 
-pub const MAX_INVALIDATORS: u8 = 5;
+pub const MAX_INVALIDATORS: usize = 5;
 pub const TOKEN_MANAGER_SEED: &str = "token-manager";
 #[account]
 pub struct TokenManager {
+    // version
     pub version: u8,
+    // bump
     pub bump: u8,
+    // count
     pub count: u64,
+    // number of invalidator assigned to this token manager
     pub num_invalidators: u8,
+    // issuer of this token manager
     pub issuer: Pubkey,
+    // mint of the tokens in this token manager
     pub mint: Pubkey,
+    // amount of tokens in this token manager
     pub amount: u64,
+    // kind of token manager
     pub kind: u8,
+    // current state of the token manager
     pub state: u8,
+    // timestamp for when the token manager state has change
     pub state_changed_at: i64,
+    // what happens to the token upon invalidation
     pub invalidation_type: u8,
+    // token account currently holding the tokens in the token manager
     pub recipient_token_account: Pubkey,
+    
+    // mint to accept payments
+    pub payment_mint: Option<Pubkey>,
+    // amount of payment to accept
+    pub payment_amount: Option<u64>,
+    // fixed expiration
+    pub expiration: Option<i64>,
+    // duration after claim at which this will expire
+    pub duration_seconds: Option<u64>,
+    // max expiration this can be extended to
+    pub max_expiration: Option<i64>,
+    // whether extension can be done in partial amounts
+    pub disable_partial_extension: Option<bool>,
+
+    // number of times this token manager has been used
+    pub usages: u64,
+    // total usages before invalidation
+    pub total_usages: Option<u64>,
+    // max usages this token manager can be extended to
+    pub max_usages: Option<u64>,
+
+    // the receipt mint from this token manager if it has been claimed
     pub receipt_mint: Option<Pubkey>,
+    // the authority to approve claims of this token
     pub claim_approver: Option<Pubkey>,
+    // the authority who can approve transfers of this token
     pub transfer_authority: Option<Pubkey>,
+    // array of other public keys who can invalidate this token manager
     pub invalidators: Vec<Pubkey>,
 }
 

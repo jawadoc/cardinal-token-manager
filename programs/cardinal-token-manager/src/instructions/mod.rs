@@ -12,6 +12,9 @@ pub mod unissue;
 pub mod claim;
 pub mod transfer;
 pub mod invalidate;
+pub mod extend_expiration;
+pub mod extend_usages;
+pub mod increment_usages;
 pub mod create_mint_manager;
 pub mod close_mint_manager;
 
@@ -29,5 +32,8 @@ pub use unissue::*;
 pub use claim::*;
 pub use transfer::*;
 pub use invalidate::*;
+pub use extend_expiration::*;
+pub use extend_usages::*;
+pub use increment_usages::*;
 pub use create_mint_manager::*;
 pub use close_mint_manager::*;

@@ -38,12 +38,10 @@ export type CardinalTokenManager = {
       ];
       args: [
         {
-          name: "mint";
-          type: "publicKey";
-        },
-        {
-          name: "numInvalidators";
-          type: "u8";
+          name: "ix";
+          type: {
+            defined: "InitIx";
+          };
         }
       ];
     },
@@ -620,6 +618,58 @@ export type CardinalTokenManager = {
             type: "publicKey";
           },
           {
+            name: "paymentMint";
+            type: {
+              option: "publicKey";
+            };
+          },
+          {
+            name: "paymentAmount";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "expiration";
+            type: {
+              option: "i64";
+            };
+          },
+          {
+            name: "durationSeconds";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "maxExpiration";
+            type: {
+              option: "i64";
+            };
+          },
+          {
+            name: "disablePartialExtension";
+            type: {
+              option: "bool";
+            };
+          },
+          {
+            name: "usages";
+            type: "u64";
+          },
+          {
+            name: "totalUsages";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "maxUsages";
+            type: {
+              option: "u64";
+            };
+          },
+          {
             name: "receiptMint";
             type: {
               option: "publicKey";
@@ -740,6 +790,72 @@ export type CardinalTokenManager = {
     }
   ];
   types: [
+    {
+      name: "InitIx";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "mint";
+            type: "publicKey";
+          },
+          {
+            name: "paymentMint";
+            type: {
+              option: "publicKey";
+            };
+          },
+          {
+            name: "paymentAmount";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "expiration";
+            type: {
+              option: "i64";
+            };
+          },
+          {
+            name: "durationSeconds";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "maxExpiration";
+            type: {
+              option: "i64";
+            };
+          },
+          {
+            name: "disablePartialExtension";
+            type: {
+              option: "bool";
+            };
+          },
+          {
+            name: "totalUsages";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "maxUsages";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "invalidators";
+            type: {
+              vec: "publicKey";
+            };
+          }
+        ];
+      };
+    },
     {
       name: "IssueIx";
       type: {
@@ -940,6 +1056,71 @@ export type CardinalTokenManager = {
       code: 6024;
       name: "InvalidCurrentTokenAccount";
       msg: "Invalid current holder token account";
+    },
+    {
+      code: 6025;
+      name: "InvalidPaymentTokenAccount";
+      msg: "Token account not owned by the claim approver";
+    },
+    {
+      code: 6026;
+      name: "InvalidPayerTokenAccount";
+      msg: "Token account not owned by the issuer";
+    },
+    {
+      code: 6027;
+      name: "InvalidTokenManager";
+      msg: "Invalid token manager for this claim approver";
+    },
+    {
+      code: 6028;
+      name: "InvalidExpiration";
+      msg: "Expiration has not passed yet";
+    },
+    {
+      code: 6029;
+      name: "InvalidInstruction";
+      msg: "Invalid instruction";
+    },
+    {
+      code: 6030;
+      name: "InvalidExtendExpiration";
+      msg: "Max expiration exceeded";
+    },
+    {
+      code: 6031;
+      name: "InvalidPaymentMint";
+      msg: "Invalid payment mint on time invalidator";
+    },
+    {
+      code: 6032;
+      name: "InvalidExtensionAmount";
+      msg: "Invalid extension partial duration not allowed";
+    },
+    {
+      code: 6033;
+      name: "InvalidPaymentManagerTokenAccount";
+      msg: "Token account incorrect mint";
+    },
+    {
+      code: 6034;
+      name: "InvalidTokenAccount";
+      msg: "Token account not owned by the issuer";
+    },
+    {
+      code: 6035;
+      name: "InvalidUser";
+      msg: "User is not permitted to use";
+    },
+    {
+      code: 6036;
+      name: "InsufficientUsages";
+      msg: "Usages at the maximum";
+    },
+    {
+      code: 6037;
+      name: "MaxUsagesReached";
+      msg: "Max usages reached";
     }
   ];
 };
@@ -984,12 +1165,10 @@ export const IDL: CardinalTokenManager = {
       ],
       args: [
         {
-          name: "mint",
-          type: "publicKey",
-        },
-        {
-          name: "numInvalidators",
-          type: "u8",
+          name: "ix",
+          type: {
+            defined: "InitIx",
+          },
         },
       ],
     },
@@ -1566,6 +1745,58 @@ export const IDL: CardinalTokenManager = {
             type: "publicKey",
           },
           {
+            name: "paymentMint",
+            type: {
+              option: "publicKey",
+            },
+          },
+          {
+            name: "paymentAmount",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "expiration",
+            type: {
+              option: "i64",
+            },
+          },
+          {
+            name: "durationSeconds",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "maxExpiration",
+            type: {
+              option: "i64",
+            },
+          },
+          {
+            name: "disablePartialExtension",
+            type: {
+              option: "bool",
+            },
+          },
+          {
+            name: "usages",
+            type: "u64",
+          },
+          {
+            name: "totalUsages",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "maxUsages",
+            type: {
+              option: "u64",
+            },
+          },
+          {
             name: "receiptMint",
             type: {
               option: "publicKey",
@@ -1686,6 +1917,72 @@ export const IDL: CardinalTokenManager = {
     },
   ],
   types: [
+    {
+      name: "InitIx",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "mint",
+            type: "publicKey",
+          },
+          {
+            name: "paymentMint",
+            type: {
+              option: "publicKey",
+            },
+          },
+          {
+            name: "paymentAmount",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "expiration",
+            type: {
+              option: "i64",
+            },
+          },
+          {
+            name: "durationSeconds",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "maxExpiration",
+            type: {
+              option: "i64",
+            },
+          },
+          {
+            name: "disablePartialExtension",
+            type: {
+              option: "bool",
+            },
+          },
+          {
+            name: "totalUsages",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "maxUsages",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "invalidators",
+            type: {
+              vec: "publicKey",
+            },
+          },
+        ],
+      },
+    },
     {
       name: "IssueIx",
       type: {
@@ -1886,6 +2183,71 @@ export const IDL: CardinalTokenManager = {
       code: 6024,
       name: "InvalidCurrentTokenAccount",
       msg: "Invalid current holder token account",
+    },
+    {
+      code: 6025,
+      name: "InvalidPaymentTokenAccount",
+      msg: "Token account not owned by the claim approver",
+    },
+    {
+      code: 6026,
+      name: "InvalidPayerTokenAccount",
+      msg: "Token account not owned by the issuer",
+    },
+    {
+      code: 6027,
+      name: "InvalidTokenManager",
+      msg: "Invalid token manager for this claim approver",
+    },
+    {
+      code: 6028,
+      name: "InvalidExpiration",
+      msg: "Expiration has not passed yet",
+    },
+    {
+      code: 6029,
+      name: "InvalidInstruction",
+      msg: "Invalid instruction",
+    },
+    {
+      code: 6030,
+      name: "InvalidExtendExpiration",
+      msg: "Max expiration exceeded",
+    },
+    {
+      code: 6031,
+      name: "InvalidPaymentMint",
+      msg: "Invalid payment mint on time invalidator",
+    },
+    {
+      code: 6032,
+      name: "InvalidExtensionAmount",
+      msg: "Invalid extension partial duration not allowed",
+    },
+    {
+      code: 6033,
+      name: "InvalidPaymentManagerTokenAccount",
+      msg: "Token account incorrect mint",
+    },
+    {
+      code: 6034,
+      name: "InvalidTokenAccount",
+      msg: "Token account not owned by the issuer",
+    },
+    {
+      code: 6035,
+      name: "InvalidUser",
+      msg: "User is not permitted to use",
+    },
+    {
+      code: 6036,
+      name: "InsufficientUsages",
+      msg: "Usages at the maximum",
+    },
+    {
+      code: 6037,
+      name: "MaxUsagesReached",
+      msg: "Max usages reached",
     },
   ],
 };
