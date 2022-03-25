@@ -1,4 +1,5 @@
 import {
+  MasterEdition,
   Metadata,
   MetadataProgram,
 } from "@metaplex-foundation/mpl-token-metadata";
@@ -387,10 +388,12 @@ export const claimReceiptMint = async (
 
   const [
     receiptMintMetadataId,
+    receiptMintEditionId,
     recipientTokenAccountId,
     [receiptMintManagerId],
   ] = await Promise.all([
     Metadata.getPDA(receiptMintId),
+    await MasterEdition.getPDA(receiptMintId),
     findAta(receiptMintId, wallet.publicKey),
     findReceiptMintManagerId(),
   ]);
@@ -400,6 +403,7 @@ export const claimReceiptMint = async (
       tokenManager: tokenManagerId,
       receiptMint: receiptMintId,
       receiptMintMetadata: receiptMintMetadataId,
+      receiptMintEdition: receiptMintEditionId,
       recipientTokenAccount: recipientTokenAccountId,
       issuer: wallet.publicKey,
       payer: wallet.publicKey,
