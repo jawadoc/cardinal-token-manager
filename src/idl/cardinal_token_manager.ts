@@ -43,10 +43,8 @@ export type CardinalTokenManager = {
       ];
       args: [
         {
-          name: "ix";
-          type: {
-            defined: "InitIx";
-          };
+          name: "numInvalidators";
+          type: "u8";
         }
       ];
     },
@@ -342,7 +340,14 @@ export type CardinalTokenManager = {
           isSigner: false;
         }
       ];
-      args: [];
+      args: [
+        {
+          name: "ix";
+          type: {
+            defined: "IssueIx";
+          };
+        }
+      ];
     },
     {
       name: "unissue";
@@ -737,7 +742,7 @@ export type CardinalTokenManager = {
   ];
   types: [
     {
-      name: "InitIx";
+      name: "IssueIx";
       type: {
         kind: "struct";
         fields: [
@@ -751,10 +756,6 @@ export type CardinalTokenManager = {
           },
           {
             name: "invalidationType";
-            type: "u8";
-          },
-          {
-            name: "numInvalidators";
             type: "u8";
           }
         ];
@@ -1002,10 +1003,8 @@ export const IDL: CardinalTokenManager = {
       ],
       args: [
         {
-          name: "ix",
-          type: {
-            defined: "InitIx",
-          },
+          name: "numInvalidators",
+          type: "u8",
         },
       ],
     },
@@ -1301,7 +1300,14 @@ export const IDL: CardinalTokenManager = {
           isSigner: false,
         },
       ],
-      args: [],
+      args: [
+        {
+          name: "ix",
+          type: {
+            defined: "IssueIx",
+          },
+        },
+      ],
     },
     {
       name: "unissue",
@@ -1696,7 +1702,7 @@ export const IDL: CardinalTokenManager = {
   ],
   types: [
     {
-      name: "InitIx",
+      name: "IssueIx",
       type: {
         kind: "struct",
         fields: [
@@ -1710,10 +1716,6 @@ export const IDL: CardinalTokenManager = {
           },
           {
             name: "invalidationType",
-            type: "u8",
-          },
-          {
-            name: "numInvalidators",
             type: "u8",
           },
         ],

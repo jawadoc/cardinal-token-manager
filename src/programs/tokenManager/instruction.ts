@@ -60,10 +60,7 @@ export const init = async (
   wallet: Wallet,
   mint: PublicKey,
   issuerTokenAccountId: PublicKey,
-  amount: BN,
-  kind: TokenManagerKind,
-  invalidationType: InvalidationType,
-  numInvalidators = 1
+  numInvalidator = 1
 ): Promise<[TransactionInstruction, PublicKey]> => {
   const provider = new Provider(connection, wallet, {});
   const tokenManagerProgram = new Program<TOKEN_MANAGER_PROGRAM>(
@@ -78,25 +75,17 @@ export const init = async (
   ]);
 
   return [
-    tokenManagerProgram.instruction.init(
-      {
-        numInvalidators,
-        amount,
-        kind,
-        invalidationType,
+    tokenManagerProgram.instruction.init(numInvalidator, {
+      accounts: {
+        tokenManager: tokenManagerId,
+        mintCounter: mintCounterId,
+        mint: mint,
+        issuer: wallet.publicKey,
+        payer: wallet.publicKey,
+        issuerTokenAccount: issuerTokenAccountId,
+        systemProgram: SystemProgram.programId,
       },
-      {
-        accounts: {
-          tokenManager: tokenManagerId,
-          mintCounter: mintCounterId,
-          mint: mint,
-          issuer: wallet.publicKey,
-          payer: wallet.publicKey,
-          issuerTokenAccount: issuerTokenAccountId,
-          systemProgram: SystemProgram.programId,
-        },
-      }
-    ),
+    }),
     tokenManagerId,
   ];
 };
@@ -171,8 +160,11 @@ export const issue = (
   connection: Connection,
   wallet: Wallet,
   tokenManagerId: PublicKey,
+  amount: BN,
   tokenManagerTokenAccountId: PublicKey,
-  issuerTokenAccountId: PublicKey
+  issuerTokenAccountId: PublicKey,
+  kind: TokenManagerKind,
+  invalidationType: InvalidationType
 ): TransactionInstruction => {
   const provider = new Provider(connection, wallet, {});
   const tokenManagerProgram = new Program<TOKEN_MANAGER_PROGRAM>(
@@ -181,17 +173,24 @@ export const issue = (
     provider
   );
 
-  return tokenManagerProgram.instruction.issue({
-    accounts: {
-      tokenManager: tokenManagerId,
-      tokenManagerTokenAccount: tokenManagerTokenAccountId,
-      issuer: wallet.publicKey,
-      issuerTokenAccount: issuerTokenAccountId,
-      payer: wallet.publicKey,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
+  return tokenManagerProgram.instruction.issue(
+    {
+      amount,
+      kind: kind,
+      invalidationType: invalidationType,
     },
-  });
+    {
+      accounts: {
+        tokenManager: tokenManagerId,
+        tokenManagerTokenAccount: tokenManagerTokenAccountId,
+        issuer: wallet.publicKey,
+        issuerTokenAccount: issuerTokenAccountId,
+        payer: wallet.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      },
+    }
+  );
 };
 
 export const unissue = (

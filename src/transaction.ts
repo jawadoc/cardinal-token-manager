@@ -69,7 +69,7 @@ export const withIssueToken = async (
   }: IssueParameters
 ): Promise<[Transaction, PublicKey, Keypair | undefined]> => {
   // init token manager
-  const numInvalidator =
+  const num_invalidators =
     (customInvalidators ? customInvalidators.length : 0) +
     (useInvalidation && timeInvalidation
       ? 2
@@ -81,10 +81,7 @@ export const withIssueToken = async (
     wallet,
     mint,
     issuerTokenAccountId,
-    amount,
-    kind,
-    invalidationType,
-    numInvalidator
+    num_invalidators
   );
   transaction.add(tokenManagerIx);
 
@@ -245,8 +242,11 @@ export const withIssueToken = async (
       connection,
       wallet,
       tokenManagerId,
+      amount,
       tokenManagerTokenAccountId,
-      issuerTokenAccountId
+      issuerTokenAccountId,
+      kind,
+      invalidationType
     )
   );
 
