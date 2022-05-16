@@ -31,9 +31,9 @@ Carinal protocol provides a token-manager implementation as well as basic plugin
 
 Program addresses are the same on devnet, testnet, and mainnet-beta.
 
-- TokenManager: [`mgr99QFMYByTqGPWmNqunV7vBLmWWXdSrHUfV8Jf3JM`](https://explorer.solana.com/address/mgr99QFMYByTqGPWmNqunV7vBLmWWXdSrHUfV8Jf3JM)
-- PaidClaimApprover: [`pcaBwhJ1YHp7UDA7HASpQsRUmUNwzgYaLQto2kSj1fR`](https://explorer.solana.com/address/pcaBwhJ1YHp7UDA7HASpQsRUmUNwzgYaLQto2kSj1fR)
-- TimeInvalidator: [`tmeEDp1RgoDtZFtx6qod3HkbQmv9LMe36uqKVvsLTDE`](https://explorer.solana.com/address/tmeEDp1RgoDtZFtx6qod3HkbQmv9LMe36uqKVvsLTDE)
+- TokenManager: [`Ggot33rp5d9MbRP6Jd2UZ2QrEpvfmUpX58DNw3ZBGeqK`](https://explorer.solana.com/address/Ggot33rp5d9MbRP6Jd2UZ2QrEpvfmUpX58DNw3ZBGeqK)
+- PaidClaimApprover: [`yedA4fYUEv4SjFQCpZd71qH3eWid7FjYMZum4SuZEhT`](https://explorer.solana.com/address/yedA4fYUEv4SjFQCpZd71qH3eWid7FjYMZum4SuZEhT)
+- TimeInvalidator: [`6pBkL3sgvaaPj226cY1huGCu9ytcYneQ2dZB49HY5CpG`](https://explorer.solana.com/address/6pBkL3sgvaaPj226cY1huGCu9ytcYneQ2dZB49HY5CpG)
 - UseInvalidator: [`useZ65tbyvWpdYCLDJaegGK34Lnsi8S3jZdwx8122qp`](https://explorer.solana.com/address/useZ65tbyvWpdYCLDJaegGK34Lnsi8S3jZdwx8122qp)
 
 ## Plugins

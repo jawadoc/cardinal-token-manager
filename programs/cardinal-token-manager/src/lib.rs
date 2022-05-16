@@ -5,7 +5,7 @@ pub mod utils;
 
 use {anchor_lang::prelude::*, instructions::*};
 
-declare_id!("mgr99QFMYByTqGPWmNqunV7vBLmWWXdSrHUfV8Jf3JM");
+declare_id!("Ggot33rp5d9MbRP6Jd2UZ2QrEpvfmUpX58DNw3ZBGeqK");
 
 #[program]
 pub mod cardinal_token_manager {

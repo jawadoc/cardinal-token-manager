@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import * as TOKEN_MANAGER_TYPES from "../../idl/cardinal_token_manager";
 
 export const TOKEN_MANAGER_ADDRESS = new PublicKey(
-  "mgr99QFMYByTqGPWmNqunV7vBLmWWXdSrHUfV8Jf3JM"
+  "Ggot33rp5d9MbRP6Jd2UZ2QrEpvfmUpX58DNw3ZBGeqK"
 );
 
 export const MINT_COUNTER_SEED = "mint-counter";

@@ -4,7 +4,7 @@ pub mod state;
 
 use {anchor_lang::prelude::*, instructions::*};
 
-declare_id!("pcaBwhJ1YHp7UDA7HASpQsRUmUNwzgYaLQto2kSj1fR");
+declare_id!("yedA4fYUEv4SjFQCpZd71qH3eWid7FjYMZum4SuZEhT");
 
 #[program]
 pub mod cardinal_paid_claim_approver {
