@@ -24,7 +24,7 @@ import {
 import { getTokenManagersByState } from "../src/programs/tokenManager/accounts";
 import { connectionFor } from "./connection";
 
-// crkdpVWjHWdggGgBuSyAqSmZUmAjYLzD435tcLDRLXr
+// EBEhYotBqZt4giEDA748BFGE4ALJFESkKoyuHttcZx5t
 const wallet = Keypair.fromSecretKey(
   utils.bytes.bs58.decode(process.env.CRANK_SOLANA_KEY || "")
 );

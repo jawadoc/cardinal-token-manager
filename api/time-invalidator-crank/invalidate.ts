@@ -2,9 +2,9 @@ import {
   programs,
   tryGetAccount,
   withInvalidate,
-} from "@cardinal/token-manager";
-import { timeInvalidator } from "@cardinal/token-manager/dist/cjs/programs";
-import { TokenManagerState } from "@cardinal/token-manager/dist/cjs/programs/tokenManager";
+} from "@jonchain/token-manager";
+import { timeInvalidator } from "@jonchain/token-manager/dist/cjs/programs";
+import { TokenManagerState } from "@jonchain/token-manager/dist/cjs/programs/tokenManager";
 import { BN, utils } from "@project-serum/anchor";
 import { SignerWallet } from "@saberhq/solana-contrib";
 import {
@@ -15,7 +15,7 @@ import {
 
 import { connectionFor, secondaryConnectionFor } from "../common/connection";
 
-// crkdpVWjHWdggGgBuSyAqSmZUmAjYLzD435tcLDRLXr
+// EBEhYotBqZt4giEDA748BFGE4ALJFESkKoyuHttcZx5t
 const wallet = Keypair.fromSecretKey(
   utils.bytes.bs58.decode(process.env.SOLANA_CRANK_KEY || "")
 );
@@ -123,6 +123,7 @@ const main = async (cluster: string) => {
 };
 
 export const invalidateAll = async (mainnet = true) => {
+  console.log(mainnet);
   if (mainnet) {
     try {
       await main("mainnet");
