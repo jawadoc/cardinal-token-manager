@@ -1,5 +1,5 @@
 export type CardinalUseInvalidator = {
-  version: "1.3.10";
+  version: "1.4.3";
   name: "cardinal_use_invalidator";
   instructions: [
     {
@@ -85,12 +85,17 @@ export type CardinalUseInvalidator = {
           isSigner: false;
         },
         {
+          name: "paymentManager";
+          isMut: true;
+          isSigner: false;
+        },
+        {
           name: "paymentTokenAccount";
           isMut: true;
           isSigner: false;
         },
         {
-          name: "paymentManagerTokenAccount";
+          name: "feeCollectorTokenAccount";
           isMut: true;
           isSigner: false;
         },
@@ -106,6 +111,11 @@ export type CardinalUseInvalidator = {
         },
         {
           name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "cardinalPaymentManager";
           isMut: false;
           isSigner: false;
         }
@@ -370,12 +380,27 @@ export type CardinalUseInvalidator = {
       code: 6010;
       name: "InvalidCollector";
       msg: "Invalid collector";
+    },
+    {
+      code: 6011;
+      name: "InvalidPaymentManagerProgram";
+      msg: "Invalid payment manager program";
+    },
+    {
+      code: 6012;
+      name: "InvalidPaymentManager";
+      msg: "Invalid payment manager";
+    },
+    {
+      code: 6013;
+      name: "InvalidPaymentMint";
+      msg: "Invalid payment mint";
     }
   ];
 };
 
 export const IDL: CardinalUseInvalidator = {
-  version: "1.3.10",
+  version: "1.4.3",
   name: "cardinal_use_invalidator",
   instructions: [
     {
@@ -461,12 +486,17 @@ export const IDL: CardinalUseInvalidator = {
           isSigner: false,
         },
         {
+          name: "paymentManager",
+          isMut: true,
+          isSigner: false,
+        },
+        {
           name: "paymentTokenAccount",
           isMut: true,
           isSigner: false,
         },
         {
-          name: "paymentManagerTokenAccount",
+          name: "feeCollectorTokenAccount",
           isMut: true,
           isSigner: false,
         },
@@ -482,6 +512,11 @@ export const IDL: CardinalUseInvalidator = {
         },
         {
           name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "cardinalPaymentManager",
           isMut: false,
           isSigner: false,
         },
@@ -746,6 +781,21 @@ export const IDL: CardinalUseInvalidator = {
       code: 6010,
       name: "InvalidCollector",
       msg: "Invalid collector",
+    },
+    {
+      code: 6011,
+      name: "InvalidPaymentManagerProgram",
+      msg: "Invalid payment manager program",
+    },
+    {
+      code: 6012,
+      name: "InvalidPaymentManager",
+      msg: "Invalid payment manager",
+    },
+    {
+      code: 6013,
+      name: "InvalidPaymentMint",
+      msg: "Invalid payment mint",
     },
   ],
 };

@@ -1,10 +1,15 @@
 import {
+  AccountData,
   programs,
-  tryGetAccount,
-  withInvalidate,
+  withFindOrInitAssociatedTokenAccount,
 } from "@onchain_org/token-manager";
 import { timeInvalidator } from "@onchain_org/token-manager/dist/cjs/programs";
-import { TokenManagerState } from "@onchain_org/token-manager/dist/cjs/programs/tokenManager";
+import { TimeInvalidatorData } from "@onchain_org/token-manager/dist/cjs/programs/timeInvalidator";
+import {
+  TokenManagerData,
+  TokenManagerState,
+  withRemainingAccountsForReturn,
+} from "@onchain_org/token-manager/dist/cjs/programs/tokenManager";
 import { BN, utils } from "@project-serum/anchor";
 import { SignerWallet } from "@saberhq/solana-contrib";
 import {
@@ -20,32 +25,67 @@ const wallet = Keypair.fromSecretKey(
   utils.bytes.bs58.decode(process.env.SOLANA_CRANK_KEY || "")
 );
 
+export const shouldTimeInvalidate = (
+  tokenManagerData: AccountData<TokenManagerData>,
+  timeInvalidatorData: AccountData<TimeInvalidatorData>
+): boolean => {
+  return Boolean(
+    tokenManagerData?.parsed.state !== TokenManagerState.Invalidated &&
+      ((timeInvalidatorData.parsed.maxExpiration &&
+        new BN(Date.now() / 1000).gte(
+          timeInvalidatorData.parsed.maxExpiration
+        )) ||
+        (timeInvalidatorData.parsed.expiration &&
+          tokenManagerData.parsed.state === TokenManagerState.Claimed &&
+          new BN(Date.now() / 1000).gte(
+            timeInvalidatorData.parsed.expiration
+          )) ||
+        (!timeInvalidatorData.parsed.expiration &&
+          tokenManagerData.parsed.state === TokenManagerState.Claimed &&
+          timeInvalidatorData.parsed.durationSeconds &&
+          new BN(Date.now() / 1000).gte(
+            tokenManagerData.parsed.stateChangedAt.add(
+              timeInvalidatorData.parsed.durationSeconds
+            )
+          )))
+  );
+};
+
 const main = async (cluster: string) => {
   const connection = connectionFor(cluster);
 
-  const invalidTimeInvalidators =
+  const allTimeInvalidators =
     await programs.timeInvalidator.accounts.getAllTimeInvalidators(connection);
+
+  const tokenManagerIds = allTimeInvalidators.map(
+    (timeInvalidator) => timeInvalidator.parsed.tokenManager
+  );
+
+  const tokenManagers = await programs.tokenManager.accounts.getTokenManagers(
+    connection,
+    tokenManagerIds
+  );
 
   console.log(
     `--------------- ${wallet.publicKey.toString()} found ${
-      invalidTimeInvalidators.length
+      allTimeInvalidators.length
     } expired invalidators found on ${cluster} ---------------`
   );
 
-  for (let i = 0; i < invalidTimeInvalidators.length; i++) {
-    const timeInvalidatorData = invalidTimeInvalidators[i]!;
+  for (let i = 0; i < allTimeInvalidators.length; i++) {
+    const timeInvalidatorData = allTimeInvalidators[i]!;
     try {
       console.log(
-        `\n\n\n\n\n--------------- ${i}/${invalidTimeInvalidators.length}`,
+        `\n\n\n\n\n--------------- ${i}/${allTimeInvalidators.length}`,
         timeInvalidatorData.pubkey.toString(),
         timeInvalidatorData.parsed.tokenManager.toString(),
         "---------------"
       );
-      const tokenManagerData = await tryGetAccount(() =>
-        programs.tokenManager.accounts.getTokenManager(
-          connection,
-          timeInvalidatorData.parsed.tokenManager
-        )
+
+      const tokenManagerData = tokenManagers.find(
+        (tokenManager) =>
+          tokenManager.pubkey.toString() ===
+          timeInvalidatorData.parsed.tokenManager.toString()
       );
 
       const getPaidClaimApprover = await tryGetAccount(() =>
@@ -74,35 +114,46 @@ const main = async (cluster: string) => {
             timeInvalidatorData.parsed.tokenManager
           )
         );
-      } else if (
-        tokenManagerData?.parsed.state !== TokenManagerState.Invalidated &&
-        ((timeInvalidatorData.parsed.expiration &&
-          new BN(Date.now() / 1000).gte(
-            timeInvalidatorData.parsed.expiration
-          )) ||
-          (timeInvalidatorData.parsed.maxExpiration &&
-            new BN(Date.now() / 1000).gte(
-              timeInvalidatorData.parsed.maxExpiration
-            )) ||
-          (!timeInvalidatorData.parsed.expiration &&
-            timeInvalidatorData.parsed.durationSeconds &&
-            tokenManagerData.parsed.state === TokenManagerState.Claimed &&
-            new BN(Date.now() / 1000).gte(
-              tokenManagerData.parsed.stateChangedAt.add(
-                timeInvalidatorData.parsed.durationSeconds
-              )
-            )))
-      ) {
-
-        console.log(`I am here ${timeInvalidatorData.pubkey.toBase58()}` )
-        // await withInvalidate(
-        //   transaction,
-        //   tokenManagerData?.parsed.receiptMint
-        //     ? secondaryConnectionFor(cluster)
-        //     : connection,
-        //   new SignerWallet(wallet),
-        //   tokenManagerData.parsed.mint
-        // );
+      } else if (shouldTimeInvalidate(tokenManagerData, timeInvalidatorData)) {
+        const tokenManagerTokenAccountId =
+          await withFindOrInitAssociatedTokenAccount(
+            transaction,
+            connection,
+            tokenManagerData.parsed.mint,
+            tokenManagerData.pubkey,
+            wallet.publicKey,
+            true
+          );
+        const remainingAccountsForReturn = await withRemainingAccountsForReturn(
+          transaction,
+          tokenManagerData?.parsed.receiptMint
+            ? secondaryConnectionFor(cluster)
+            : connection,
+          new SignerWallet(wallet),
+          tokenManagerData
+        );
+        transaction.add(
+          await timeInvalidator.instruction.invalidate(
+            connection,
+            new SignerWallet(wallet),
+            tokenManagerData.parsed.mint,
+            tokenManagerData.pubkey,
+            tokenManagerData.parsed.kind,
+            tokenManagerData.parsed.state,
+            tokenManagerTokenAccountId,
+            tokenManagerData?.parsed.recipientTokenAccount,
+            remainingAccountsForReturn
+          )
+        );
+        transaction.add(
+          timeInvalidator.instruction.close(
+            connection,
+            new SignerWallet(wallet),
+            timeInvalidatorData.pubkey,
+            timeInvalidatorData.parsed.tokenManager,
+            timeInvalidatorData.parsed.collector
+          )
+        );
       } else {
         console.log(
           `Skipping this time invalidator for mint (${tokenManagerData.parsed.mint.toString()})`

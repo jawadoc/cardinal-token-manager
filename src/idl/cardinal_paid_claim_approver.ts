@@ -1,5 +1,5 @@
 export type CardinalPaidClaimApprover = {
-  version: "1.3.10";
+  version: "1.4.3";
   name: "cardinal_paid_claim_approver";
   instructions: [
     {
@@ -54,7 +54,12 @@ export type CardinalPaidClaimApprover = {
           isSigner: false;
         },
         {
-          name: "paymentManagerTokenAccount";
+          name: "feeCollectorTokenAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "paymentManager";
           isMut: true;
           isSigner: false;
         },
@@ -80,6 +85,11 @@ export type CardinalPaidClaimApprover = {
         },
         {
           name: "cardinalTokenManager";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "cardinalPaymentManager";
           isMut: false;
           isSigner: false;
         },
@@ -218,12 +228,27 @@ export type CardinalPaidClaimApprover = {
       code: 6006;
       name: "AccountDiscriminatorMismatch";
       msg: "Invalid account discriminator";
+    },
+    {
+      code: 6007;
+      name: "InvalidPaymentManagerProgram";
+      msg: "Invalid payment manager program";
+    },
+    {
+      code: 6008;
+      name: "InvalidPaymentManager";
+      msg: "Invalid payment manager";
+    },
+    {
+      code: 6009;
+      name: "InvalidPaymentMint";
+      msg: "Invalid payment mint";
     }
   ];
 };
 
 export const IDL: CardinalPaidClaimApprover = {
-  version: "1.3.10",
+  version: "1.4.3",
   name: "cardinal_paid_claim_approver",
   instructions: [
     {
@@ -278,7 +303,12 @@ export const IDL: CardinalPaidClaimApprover = {
           isSigner: false,
         },
         {
-          name: "paymentManagerTokenAccount",
+          name: "feeCollectorTokenAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "paymentManager",
           isMut: true,
           isSigner: false,
         },
@@ -304,6 +334,11 @@ export const IDL: CardinalPaidClaimApprover = {
         },
         {
           name: "cardinalTokenManager",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "cardinalPaymentManager",
           isMut: false,
           isSigner: false,
         },
@@ -442,6 +477,21 @@ export const IDL: CardinalPaidClaimApprover = {
       code: 6006,
       name: "AccountDiscriminatorMismatch",
       msg: "Invalid account discriminator",
+    },
+    {
+      code: 6007,
+      name: "InvalidPaymentManagerProgram",
+      msg: "Invalid payment manager program",
+    },
+    {
+      code: 6008,
+      name: "InvalidPaymentManager",
+      msg: "Invalid payment manager",
+    },
+    {
+      code: 6009,
+      name: "InvalidPaymentMint",
+      msg: "Invalid payment mint",
     },
   ],
 };

@@ -9,10 +9,14 @@ import type {
 } from "@solana/web3.js";
 import { SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 
+import {
+  DEFAULT_PAYMENT_MANAGER_NAME,
+  PAYMENT_MANAGER_ADDRESS,
+} from "../paymentManager";
+import { findPaymentManagerAddress } from "../paymentManager/pda";
 import type { TokenManagerKind } from "../tokenManager";
 import {
   CRANK_KEY,
-  PAYMENT_MANAGER_KEY,
   TOKEN_MANAGER_ADDRESS,
   TokenManagerState,
 } from "../tokenManager";
@@ -51,11 +55,15 @@ export const init = async (
   const [useInvalidatorId, _useInvalidatorBump] =
     await findUseInvalidatorAddress(tokenManagerId);
 
+  const [defaultPaymentManagerId] = await findPaymentManagerAddress(
+    DEFAULT_PAYMENT_MANAGER_NAME
+  );
+
   return [
     useInvalidatorProgram.instruction.init(
       {
-        collector: params.collector || PAYMENT_MANAGER_KEY,
-        paymentManager: params.paymentManager || CRANK_KEY,
+        collector: params.collector || CRANK_KEY,
+        paymentManager: params.paymentManager || defaultPaymentManagerId,
         totalUsages: params.totalUsages ? new BN(params.totalUsages) : null,
         maxUsages: params.extension?.maxUsages
           ? new BN(params.extension?.maxUsages)
@@ -159,9 +167,10 @@ export const extendUsages = (
   connection: Connection,
   wallet: Wallet,
   tokenManagerId: PublicKey,
+  paymentManager: PublicKey,
   payerTokenAccountId: PublicKey,
   useInvalidatorId: PublicKey,
-  extensionPaymentAmount: number,
+  usagesToAdd: number,
   paymentAccounts: [PublicKey, PublicKey, AccountMeta[]]
 ): TransactionInstruction => {
   const provider = new AnchorProvider(connection, wallet, {});
@@ -172,26 +181,22 @@ export const extendUsages = (
     provider
   );
 
-  const [
-    paymentTokenAccountId,
-    paymentManagerTokenAccountId,
+  const [paymentTokenAccountId, feeCollectorTokenAccount, remainingAccounts] =
+    paymentAccounts;
+  return useInvalidatorProgram.instruction.extendUsages(new BN(usagesToAdd), {
+    accounts: {
+      tokenManager: tokenManagerId,
+      useInvalidator: useInvalidatorId,
+      paymentManager: paymentManager,
+      paymentTokenAccount: paymentTokenAccountId,
+      feeCollectorTokenAccount: feeCollectorTokenAccount,
+      payer: wallet.publicKey,
+      payerTokenAccount: payerTokenAccountId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      cardinalPaymentManager: PAYMENT_MANAGER_ADDRESS,
+    },
     remainingAccounts,
-  ] = paymentAccounts;
-  return useInvalidatorProgram.instruction.extendUsages(
-    new BN(extensionPaymentAmount),
-    {
-      accounts: {
-        tokenManager: tokenManagerId,
-        useInvalidator: useInvalidatorId,
-        paymentTokenAccount: paymentTokenAccountId,
-        paymentManagerTokenAccount: paymentManagerTokenAccountId,
-        payer: wallet.publicKey,
-        payerTokenAccount: payerTokenAccountId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      },
-      remainingAccounts,
-    }
-  );
+  });
 };
 
 export const close = (

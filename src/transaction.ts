@@ -17,6 +17,7 @@ import {
 } from "./programs";
 import type { ClaimApproverParams } from "./programs/claimApprover/instruction";
 import type { TimeInvalidationParams } from "./programs/timeInvalidator/instruction";
+import { shouldTimeInvalidate } from "./programs/timeInvalidator/utils";
 import {
   InvalidationType,
   TokenManagerKind,
@@ -323,8 +324,8 @@ export const withClaimToken = async (
       wallet,
       claimApproverData.parsed.paymentMint,
       tokenManagerData.parsed.issuer,
-      tokenManagerData.parsed.receiptMint,
       claimApproverData.parsed.paymentManager,
+      tokenManagerData.parsed.receiptMint,
       additionalOptions?.payer ?? wallet.publicKey
     );
 
@@ -334,6 +335,7 @@ export const withClaimToken = async (
         wallet,
         tokenManagerId,
         payerTokenAccountId,
+        claimApproverData.parsed.paymentManager,
         paymentAccounts
       )
     );
@@ -500,17 +502,7 @@ export const withInvalidate = async (
     );
   } else if (
     timeInvalidatorData &&
-    ((timeInvalidatorData.parsed.maxExpiration &&
-      timeInvalidatorData.parsed.maxExpiration.lte(
-        new BN(Date.now() / 1000)
-      )) ||
-      (timeInvalidatorData.parsed.expiration &&
-        timeInvalidatorData.parsed.expiration.lte(new BN(Date.now() / 1000))) ||
-      (!timeInvalidatorData.parsed.expiration &&
-        timeInvalidatorData.parsed.durationSeconds &&
-        tokenManagerData.parsed.stateChangedAt
-          .add(timeInvalidatorData.parsed.durationSeconds)
-          .lte(new BN(Date.now() / 1000))))
+    shouldTimeInvalidate(tokenManagerData, timeInvalidatorData)
   ) {
     transaction.add(
       await timeInvalidator.instruction.invalidate(
@@ -681,8 +673,8 @@ export const withExtendExpiration = async (
       wallet,
       timeInvalidatorData.parsed.extensionPaymentMint,
       tokenManagerData.parsed.issuer,
-      tokenManagerData.parsed.receiptMint,
-      timeInvalidatorData.parsed.paymentManager
+      timeInvalidatorData.parsed.paymentManager,
+      tokenManagerData.parsed.receiptMint
     );
 
     transaction.add(
@@ -690,6 +682,7 @@ export const withExtendExpiration = async (
         connection,
         wallet,
         tokenManagerId,
+        timeInvalidatorData.parsed.paymentManager,
         payerTokenAccountId,
         timeInvalidatorId,
         secondsToAdd,
@@ -708,7 +701,7 @@ export const withExtendUsages = async (
   connection: Connection,
   wallet: Wallet,
   tokenManagerId: PublicKey,
-  paymentAmount: number
+  usagesToAdd: number
 ): Promise<Transaction> => {
   const [useInvalidatorId] = await useInvalidator.pda.findUseInvalidatorAddress(
     tokenManagerId
@@ -733,8 +726,8 @@ export const withExtendUsages = async (
       wallet,
       useInvalidatorData.parsed.extensionPaymentMint,
       tokenManagerData.parsed.issuer,
-      tokenManagerData.parsed.receiptMint,
-      useInvalidatorData.parsed.paymentManager
+      useInvalidatorData.parsed.paymentManager,
+      tokenManagerData.parsed.receiptMint
     );
 
     transaction.add(
@@ -742,9 +735,10 @@ export const withExtendUsages = async (
         connection,
         wallet,
         tokenManagerId,
+        useInvalidatorData.parsed.paymentManager,
         payerTokenAccountId,
         useInvalidatorId,
-        paymentAmount,
+        usagesToAdd,
         paymentAccounts
       )
     );

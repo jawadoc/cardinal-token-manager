@@ -9,13 +9,14 @@ import type {
 } from "@solana/web3.js";
 import { SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 
-import type { TokenManagerKind } from "../tokenManager";
 import {
-  CRANK_KEY,
-  PAYMENT_MANAGER_KEY,
-  TOKEN_MANAGER_ADDRESS,
-  TokenManagerState,
-} from "../tokenManager";
+  DEFAULT_PAYMENT_MANAGER_NAME,
+  PAYMENT_MANAGER_ADDRESS,
+} from "../paymentManager";
+import { findPaymentManagerAddress } from "../paymentManager/pda";
+import type { TokenManagerKind } from "../tokenManager";
+import { CRANK_KEY } from "../tokenManager";
+import * as tokenManager from "../tokenManager";
 import { getRemainingAccountsForKind } from "../tokenManager/utils";
 import type { TIME_INVALIDATOR_PROGRAM } from "./constants";
 import { TIME_INVALIDATOR_ADDRESS, TIME_INVALIDATOR_IDL } from "./constants";
@@ -51,11 +52,16 @@ export const init = async (
   const [timeInvalidatorId, _timeInvalidatorBump] =
     await findTimeInvalidatorAddress(tokenManagerId);
 
+  const [defaultPaymentManagerId] = await findPaymentManagerAddress(
+    DEFAULT_PAYMENT_MANAGER_NAME
+  );
+
   return [
     timeInvalidatorProgram.instruction.init(
       {
         collector: timeInvalidation.collector || CRANK_KEY,
-        paymentManager: timeInvalidation.paymentManager || PAYMENT_MANAGER_KEY,
+        paymentManager:
+          timeInvalidation.paymentManager || defaultPaymentManagerId,
         durationSeconds:
           timeInvalidation.durationSeconds !== undefined
             ? new BN(timeInvalidation.durationSeconds)
@@ -98,6 +104,7 @@ export const extendExpiration = (
   connection: Connection,
   wallet: Wallet,
   tokenManagerId: PublicKey,
+  paymentManager: PublicKey,
   payerTokenAccountId: PublicKey,
   timeInvalidatorId: PublicKey,
   secondsToAdd: number,
@@ -111,22 +118,21 @@ export const extendExpiration = (
     provider
   );
 
-  const [
-    paymentTokenAccountId,
-    paymentManagerTokenAccountId,
-    remainingAccounts,
-  ] = paymentAccounts;
+  const [paymentTokenAccountId, feeCollectorTokenAccount, remainingAccounts] =
+    paymentAccounts;
   return timeInvalidatorProgram.instruction.extendExpiration(
     new BN(secondsToAdd),
     {
       accounts: {
         tokenManager: tokenManagerId,
         timeInvalidator: timeInvalidatorId,
+        paymentManager: paymentManager,
         paymentTokenAccount: paymentTokenAccountId,
-        paymentManagerTokenAccount: paymentManagerTokenAccountId,
+        feeCollectorTokenAccount: feeCollectorTokenAccount,
         payer: wallet.publicKey,
         payerTokenAccount: payerTokenAccountId,
         tokenProgram: TOKEN_PROGRAM_ID,
+        cardinalPaymentManager: PAYMENT_MANAGER_ADDRESS,
       },
       remainingAccounts,
     }
@@ -161,7 +167,7 @@ export const invalidate = async (
   mintId: PublicKey,
   tokenManagerId: PublicKey,
   tokenManagerKind: TokenManagerKind,
-  tokenManagerState: TokenManagerState,
+  tokenManagerState: tokenManager.TokenManagerState,
   tokenManagerTokenAccountId: PublicKey,
   recipientTokenAccountId: PublicKey,
   returnAccounts: AccountMeta[]
@@ -187,12 +193,12 @@ export const invalidate = async (
       tokenManagerTokenAccount: tokenManagerTokenAccountId,
       mint: mintId,
       recipientTokenAccount: recipientTokenAccountId,
-      cardinalTokenManager: TOKEN_MANAGER_ADDRESS,
+      cardinalTokenManager: tokenManager.TOKEN_MANAGER_ADDRESS,
       tokenProgram: TOKEN_PROGRAM_ID,
       rent: SYSVAR_RENT_PUBKEY,
     },
     remainingAccounts: [
-      ...(tokenManagerState === TokenManagerState.Claimed
+      ...(tokenManagerState === tokenManager.TokenManagerState.Claimed
         ? transferAccounts
         : []),
       ...returnAccounts,
@@ -219,7 +225,7 @@ export const close = (
     accounts: {
       tokenManager: tokenManagerId,
       timeInvalidator: timeInvalidatorId,
-      collector: collector || CRANK_KEY,
+      collector: collector || tokenManager.CRANK_KEY,
       closer: wallet.publicKey,
     },
   });
