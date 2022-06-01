@@ -2,9 +2,9 @@ import {
   programs,
   tryGetAccount,
   withInvalidate,
-} from "@jonchain/token-manager";
-import { timeInvalidator } from "@jonchain/token-manager/dist/cjs/programs";
-import { TokenManagerState } from "@jonchain/token-manager/dist/cjs/programs/tokenManager";
+} from "@onchain_org/token-manager";
+import { timeInvalidator } from "@onchain_org/token-manager/dist/cjs/programs";
+import { TokenManagerState } from "@onchain_org/token-manager/dist/cjs/programs/tokenManager";
 import { BN, utils } from "@project-serum/anchor";
 import { SignerWallet } from "@saberhq/solana-contrib";
 import {
@@ -48,6 +48,22 @@ const main = async (cluster: string) => {
         )
       );
 
+      const getPaidClaimApprover = await tryGetAccount(() =>
+      programs.claimApprover.accounts.getClaimApprover(
+        connection,
+        timeInvalidatorData.parsed.tokenManager
+      )
+    );
+
+      console.log(getPaidClaimApprover.parsed.paymentManager.toBase58())
+      console.log(timeInvalidatorData.parsed?.expiration?.toNumber())
+      console.log(timeInvalidatorData.parsed?.extensionPaymentAmount?.toNumber())
+      console.log(timeInvalidatorData.parsed?.extensionDurationSeconds?.toNumber())
+      console.log(timeInvalidatorData.parsed?.durationSeconds?.toNumber())
+      console.log(timeInvalidatorData.parsed?.maxExpiration?.toNumber())
+
+      console.log(timeInvalidatorData.pubkey.toBase58())
+
       const transaction = new Transaction();
       if (!tokenManagerData) {
         transaction.add(
@@ -77,14 +93,16 @@ const main = async (cluster: string) => {
               )
             )))
       ) {
-        await withInvalidate(
-          transaction,
-          tokenManagerData?.parsed.receiptMint
-            ? secondaryConnectionFor(cluster)
-            : connection,
-          new SignerWallet(wallet),
-          tokenManagerData.parsed.mint
-        );
+
+        console.log(`I am here ${timeInvalidatorData.pubkey.toBase58()}` )
+        // await withInvalidate(
+        //   transaction,
+        //   tokenManagerData?.parsed.receiptMint
+        //     ? secondaryConnectionFor(cluster)
+        //     : connection,
+        //   new SignerWallet(wallet),
+        //   tokenManagerData.parsed.mint
+        // );
       } else {
         console.log(
           `Skipping this time invalidator for mint (${tokenManagerData.parsed.mint.toString()})`
@@ -123,7 +141,6 @@ const main = async (cluster: string) => {
 };
 
 export const invalidateAll = async (mainnet = true) => {
-  console.log(mainnet);
   if (mainnet) {
     try {
       await main("mainnet");
