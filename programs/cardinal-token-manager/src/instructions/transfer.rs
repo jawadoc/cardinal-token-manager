@@ -46,6 +46,7 @@ pub struct TransferCtx<'info> {
 pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts, 'remaining, 'info, TransferCtx<'info>>) -> Result<()> {
     let token_manager = &mut ctx.accounts.token_manager;
     token_manager.recipient_token_account = ctx.accounts.recipient_token_account.key();
+    token_manager.recipient = Some(ctx.accounts.recipient.key());
 
     let remaining_accs = &mut ctx.remaining_accounts.iter();
 

@@ -622,6 +622,12 @@ export type CardinalTokenManager = {
             type: "u8";
           },
           {
+            name: "recipient";
+            type: {
+              option: "publicKey";
+            };
+          },
+          {
             name: "recipientTokenAccount";
             type: "publicKey";
           },
@@ -1599,6 +1605,12 @@ export const IDL: CardinalTokenManager = {
           {
             name: "invalidationType",
             type: "u8",
+          },
+          {
+            name: "recipient",
+            type: {
+              option: "publicKey",
+            },
           },
           {
             name: "recipientTokenAccount",

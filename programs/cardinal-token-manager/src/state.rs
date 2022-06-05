@@ -70,6 +70,8 @@ pub struct TokenManager {
     pub state_changed_at: i64,
     // What happens upon invalidation
     pub invalidation_type: u8,
+    // Issuer or initializer of this token manager
+    pub recipient: Option<Pubkey>,
     // Token account holding the token currently
     pub recipient_token_account: Pubkey,
     // Mint representing the rightful owner of this token
