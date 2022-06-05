@@ -1,6 +1,7 @@
 import {
   AccountData,
   programs,
+  tryGetAccount,
   withFindOrInitAssociatedTokenAccount,
 } from "@onchain_org/token-manager";
 import { timeInvalidator } from "@onchain_org/token-manager/dist/cjs/programs";
@@ -95,7 +96,7 @@ const main = async (cluster: string) => {
       )
     );
 
-      console.log(getPaidClaimApprover.parsed.paymentManager.toBase58())
+      console.log(getPaidClaimApprover?.parsed.paymentManager.toBase58())
       console.log(timeInvalidatorData.parsed?.expiration?.toNumber())
       console.log(timeInvalidatorData.parsed?.extensionPaymentAmount?.toNumber())
       console.log(timeInvalidatorData.parsed?.extensionDurationSeconds?.toNumber())
