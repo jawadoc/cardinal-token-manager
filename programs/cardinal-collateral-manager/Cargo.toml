@@ -1,0 +1,32 @@
+[package]
+name = "cardinal-collateral-manager"
+version = "1.4.3"
+description = "Cardinal collateral manager"
+edition = "2021"
+homepage = "https://cardinal.so"
+repository = "https://github.com/jawadoc/cardinal-token-manager/tree/main/programs/cardinal-collateral-manager"
+authors = ["Jawad Ahmed <jawad@on-chain.io>"]
+license = "AGPL-3.0"
+keywords = ["solana", "vera"]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "cardinal_collateral_manager"
+
+[features]
+no-entrypoint = []
+no-idl = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { version = "0.24.2", features = ["init-if-needed"] }
+anchor-spl = "0.24.2"
+spl-associated-token-account = "1.0.5"
+spl-token = { version = "3.1.1", features = ["no-entrypoint"] }
+solana-program = "1.8.1"
+cardinal-token-manager = { version = "^1.4.3", path = "../cardinal-token-manager", features = ["cpi"] }
+cardinal-payment-manager = { version = "^1.4.3", path = "../cardinal-payment-manager", features = ["cpi"] }
+
+[dev-dependencies]
+proptest = { version = "1.0" }
