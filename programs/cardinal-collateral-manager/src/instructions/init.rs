@@ -40,5 +40,6 @@ pub fn handler(ctx: Context<InitCtx>, ix: InitIx) -> Result<()> {
     collateral_manager.payment_manager = ix.payment_manager;
     collateral_manager.token_manager = ctx.accounts.token_manager.key();
     collateral_manager.collector = ix.collector;
+    collateral_manager.state = CollateralManagerState::Initialized as u8;
     Ok(())
 }

@@ -22,4 +22,8 @@ pub enum ErrorCode {
     InvalidPaymentManager,
     #[msg("Invalid payment mint")]
     InvalidPaymentMint,
+    #[msg("Collateral not initialized")]
+    CollateralNotInitialized,
+    #[msg("Collateral not deposited")]
+    CollateralNotDeposited
 }
