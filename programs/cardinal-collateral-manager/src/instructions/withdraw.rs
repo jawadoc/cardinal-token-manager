@@ -22,11 +22,7 @@ pub struct InvalidateCtx<'info> {
     #[account(mut)]
     collector: AccountInfo<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    mint: UncheckedAccount<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
     token_program: UncheckedAccount<'info>,
-    rent: Sysvar<'info, Rent>,
 }
 
 pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts, 'remaining, 'info, InvalidateCtx<'info>>) -> Result<()> {
