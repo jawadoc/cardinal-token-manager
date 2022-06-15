@@ -11,11 +11,13 @@ import { Keypair } from "@solana/web3.js";
 import { findAta } from ".";
 import {
   claimApprover,
+  collateralManager,
   timeInvalidator,
   tokenManager,
   useInvalidator,
 } from "./programs";
 import type { ClaimApproverParams } from "./programs/claimApprover/instruction";
+import type { CollateralManagerParams } from "./programs/collateralManager/instruction";
 import type { TimeInvalidationParams } from "./programs/timeInvalidator/instruction";
 import { shouldTimeInvalidate } from "./programs/timeInvalidator/utils";
 import {
@@ -33,6 +35,7 @@ import { tryGetAccount, withFindOrInitAssociatedTokenAccount } from "./utils";
 
 export type IssueParameters = {
   claimPayment?: ClaimApproverParams;
+  collateral?: CollateralManagerParams;
   timeInvalidation?: TimeInvalidationParams;
   useInvalidation?: UseInvalidationParams;
   mint: PublicKey;
@@ -61,6 +64,7 @@ export const withIssueToken = async (
   wallet: Wallet,
   {
     claimPayment,
+    collateral,
     timeInvalidation,
     useInvalidation,
     mint,
@@ -125,6 +129,23 @@ export const withIssueToken = async (
         wallet,
         tokenManagerId,
         otp.publicKey
+      )
+    );
+  } else if (collateral) {
+    const [collateralManagerIx, collateralManagerId] =
+      await collateralManager.instruction.init(
+        connection,
+        wallet,
+        tokenManagerId,
+        collateral
+      );
+    transaction.add(collateralManagerIx);
+    transaction.add(
+      tokenManager.instruction.setClaimApprover(
+        connection,
+        wallet,
+        tokenManagerId,
+        collateralManagerId
       )
     );
   }
