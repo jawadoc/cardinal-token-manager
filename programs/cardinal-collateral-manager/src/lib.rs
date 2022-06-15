@@ -18,8 +18,8 @@ pub mod cardinal_collateral_manager {
         deposit::handler(ctx)
     }
 
-    pub fn invalidate<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts, 'remaining, 'info, InvalidateCtx<'info>>) -> Result<()> {
-        invalidate::handler(ctx)
+    pub fn withdraw<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts, 'remaining, 'info, InvalidateCtx<'info>>) -> Result<()> {
+        withdraw::handler(ctx)
     }
 
     pub fn close(ctx: Context<CloseCtx>) -> Result<()> {

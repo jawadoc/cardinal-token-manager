@@ -25,5 +25,7 @@ pub enum ErrorCode {
     #[msg("Collateral not initialized")]
     CollateralNotInitialized,
     #[msg("Collateral not deposited")]
-    CollateralNotDeposited
+    CollateralNotDeposited,
+    #[msg("Token account not owned by recipient")]
+    InvalidRecipientTokenAccount
 }
