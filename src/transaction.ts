@@ -314,12 +314,19 @@ export const withClaimToken = async (
     payer?: PublicKey;
   }
 ): Promise<Transaction> => {
-  const [tokenManagerData, claimApproverData] = await Promise.all([
-    tokenManager.accounts.getTokenManager(connection, tokenManagerId),
-    tryGetAccount(() =>
-      claimApprover.accounts.getClaimApprover(connection, tokenManagerId)
-    ),
-  ]);
+  const [tokenManagerData, claimApproverData, collateralManagerData] =
+    await Promise.all([
+      tokenManager.accounts.getTokenManager(connection, tokenManagerId),
+      tryGetAccount(() =>
+        claimApprover.accounts.getClaimApprover(connection, tokenManagerId)
+      ),
+      tryGetAccount(() =>
+        collateralManager.accounts.getCollateralManager(
+          connection,
+          tokenManagerId
+        )
+      ),
+    ]);
 
   let claimReceiptId;
   // pay claim approver
@@ -357,6 +364,43 @@ export const withClaimToken = async (
         tokenManagerId,
         payerTokenAccountId,
         claimApproverData.parsed.paymentManager,
+        paymentAccounts
+      )
+    );
+  } else if (
+    collateralManagerData &&
+    tokenManagerData.parsed.claimApprover &&
+    tokenManagerData.parsed.claimApprover.toString() ===
+      collateralManagerData.pubkey.toString()
+  ) {
+    const payerTokenAccountId = await findAta(
+      collateralManagerData.parsed.collateralMint,
+      wallet.publicKey
+    );
+
+    [claimReceiptId] = await tokenManager.pda.findClaimReceiptId(
+      tokenManagerId,
+      wallet.publicKey
+    );
+
+    const paymentAccounts = await withRemainingAccountsForPayment(
+      transaction,
+      connection,
+      wallet,
+      collateralManagerData.parsed.collateralMint,
+      tokenManagerData.parsed.issuer,
+      collateralManagerData.parsed.paymentManager,
+      tokenManagerData.parsed.receiptMint,
+      additionalOptions?.payer ?? wallet.publicKey
+    );
+
+    transaction.add(
+      await collateralManager.instruction.deposit(
+        connection,
+        wallet,
+        tokenManagerId,
+        payerTokenAccountId,
+        collateralManagerData.parsed.paymentManager,
         paymentAccounts
       )
     );
