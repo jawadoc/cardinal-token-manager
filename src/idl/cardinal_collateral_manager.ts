@@ -1,6 +1,6 @@
-export type CardinalPaidClaimApprover = {
+export type CardinalCollateralManager = {
   "version": "1.4.3",
-  "name": "cardinal_paid_claim_approver",
+  "name": "cardinal_collateral_manager",
   "instructions": [
     {
       "name": "init",
@@ -11,7 +11,7 @@ export type CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "claimApprover",
+          "name": "collateralManager",
           "isMut": true,
           "isSigner": false
         },
@@ -41,7 +41,7 @@ export type CardinalPaidClaimApprover = {
       ]
     },
     {
-      "name": "pay",
+      "name": "deposit",
       "accounts": [
         {
           "name": "tokenManager",
@@ -49,7 +49,7 @@ export type CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "paymentTokenAccount",
+          "name": "collateralTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -59,12 +59,12 @@ export type CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "paymentManager",
+          "name": "collateralManager",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "claimApprover",
+          "name": "paymentManager",
           "isMut": true,
           "isSigner": false
         },
@@ -84,12 +84,12 @@ export type CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "cardinalTokenManager",
+          "name": "cardinalPaymentManager",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "cardinalPaymentManager",
+          "name": "cardinalTokenManager",
           "isMut": false,
           "isSigner": false
         },
@@ -107,6 +107,42 @@ export type CardinalPaidClaimApprover = {
       "args": []
     },
     {
+      "name": "withdraw",
+      "accounts": [
+        {
+          "name": "tokenManager",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "collateralManager",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collector",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close",
       "accounts": [
         {
@@ -115,7 +151,7 @@ export type CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "claimApprover",
+          "name": "collateralManager",
           "isMut": true,
           "isSigner": false
         },
@@ -135,7 +171,7 @@ export type CardinalPaidClaimApprover = {
   ],
   "accounts": [
     {
-      "name": "paidClaimApprover",
+      "name": "collateralManager",
       "type": {
         "kind": "struct",
         "fields": [
@@ -144,11 +180,15 @@ export type CardinalPaidClaimApprover = {
             "type": "u8"
           },
           {
-            "name": "paymentAmount",
+            "name": "tokenManager",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateralAmount",
             "type": "u64"
           },
           {
-            "name": "paymentMint",
+            "name": "collateralMint",
             "type": "publicKey"
           },
           {
@@ -156,12 +196,12 @@ export type CardinalPaidClaimApprover = {
             "type": "publicKey"
           },
           {
-            "name": "tokenManager",
+            "name": "collector",
             "type": "publicKey"
           },
           {
-            "name": "collector",
-            "type": "publicKey"
+            "name": "state",
+            "type": "u8"
           }
         ]
       }
@@ -174,11 +214,11 @@ export type CardinalPaidClaimApprover = {
         "kind": "struct",
         "fields": [
           {
-            "name": "paymentMint",
+            "name": "collateralMint",
             "type": "publicKey"
           },
           {
-            "name": "paymentAmount",
+            "name": "collateralAmount",
             "type": "u64"
           },
           {
@@ -188,6 +228,23 @@ export type CardinalPaidClaimApprover = {
           {
             "name": "collector",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CollateralManagerState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Initialized"
+          },
+          {
+            "name": "Deposited"
+          },
+          {
+            "name": "Invalidated"
           }
         ]
       }
@@ -243,13 +300,28 @@ export type CardinalPaidClaimApprover = {
       "code": 6009,
       "name": "InvalidPaymentMint",
       "msg": "Invalid payment mint"
+    },
+    {
+      "code": 6010,
+      "name": "CollateralNotInitialized",
+      "msg": "Collateral not initialized"
+    },
+    {
+      "code": 6011,
+      "name": "CollateralNotDeposited",
+      "msg": "Collateral not deposited"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidRecipientTokenAccount",
+      "msg": "Token account not owned by recipient"
     }
   ]
 };
 
-export const IDL: CardinalPaidClaimApprover = {
+export const IDL: CardinalCollateralManager = {
   "version": "1.4.3",
-  "name": "cardinal_paid_claim_approver",
+  "name": "cardinal_collateral_manager",
   "instructions": [
     {
       "name": "init",
@@ -260,7 +332,7 @@ export const IDL: CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "claimApprover",
+          "name": "collateralManager",
           "isMut": true,
           "isSigner": false
         },
@@ -290,7 +362,7 @@ export const IDL: CardinalPaidClaimApprover = {
       ]
     },
     {
-      "name": "pay",
+      "name": "deposit",
       "accounts": [
         {
           "name": "tokenManager",
@@ -298,7 +370,7 @@ export const IDL: CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "paymentTokenAccount",
+          "name": "collateralTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -308,12 +380,12 @@ export const IDL: CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "paymentManager",
+          "name": "collateralManager",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "claimApprover",
+          "name": "paymentManager",
           "isMut": true,
           "isSigner": false
         },
@@ -333,12 +405,12 @@ export const IDL: CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "cardinalTokenManager",
+          "name": "cardinalPaymentManager",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "cardinalPaymentManager",
+          "name": "cardinalTokenManager",
           "isMut": false,
           "isSigner": false
         },
@@ -356,6 +428,42 @@ export const IDL: CardinalPaidClaimApprover = {
       "args": []
     },
     {
+      "name": "withdraw",
+      "accounts": [
+        {
+          "name": "tokenManager",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "collateralManager",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collector",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "close",
       "accounts": [
         {
@@ -364,7 +472,7 @@ export const IDL: CardinalPaidClaimApprover = {
           "isSigner": false
         },
         {
-          "name": "claimApprover",
+          "name": "collateralManager",
           "isMut": true,
           "isSigner": false
         },
@@ -384,7 +492,7 @@ export const IDL: CardinalPaidClaimApprover = {
   ],
   "accounts": [
     {
-      "name": "paidClaimApprover",
+      "name": "collateralManager",
       "type": {
         "kind": "struct",
         "fields": [
@@ -393,11 +501,15 @@ export const IDL: CardinalPaidClaimApprover = {
             "type": "u8"
           },
           {
-            "name": "paymentAmount",
+            "name": "tokenManager",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateralAmount",
             "type": "u64"
           },
           {
-            "name": "paymentMint",
+            "name": "collateralMint",
             "type": "publicKey"
           },
           {
@@ -405,12 +517,12 @@ export const IDL: CardinalPaidClaimApprover = {
             "type": "publicKey"
           },
           {
-            "name": "tokenManager",
+            "name": "collector",
             "type": "publicKey"
           },
           {
-            "name": "collector",
-            "type": "publicKey"
+            "name": "state",
+            "type": "u8"
           }
         ]
       }
@@ -423,11 +535,11 @@ export const IDL: CardinalPaidClaimApprover = {
         "kind": "struct",
         "fields": [
           {
-            "name": "paymentMint",
+            "name": "collateralMint",
             "type": "publicKey"
           },
           {
-            "name": "paymentAmount",
+            "name": "collateralAmount",
             "type": "u64"
           },
           {
@@ -437,6 +549,23 @@ export const IDL: CardinalPaidClaimApprover = {
           {
             "name": "collector",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CollateralManagerState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Initialized"
+          },
+          {
+            "name": "Deposited"
+          },
+          {
+            "name": "Invalidated"
           }
         ]
       }
@@ -492,6 +621,21 @@ export const IDL: CardinalPaidClaimApprover = {
       "code": 6009,
       "name": "InvalidPaymentMint",
       "msg": "Invalid payment mint"
+    },
+    {
+      "code": 6010,
+      "name": "CollateralNotInitialized",
+      "msg": "Collateral not initialized"
+    },
+    {
+      "code": 6011,
+      "name": "CollateralNotDeposited",
+      "msg": "Collateral not deposited"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidRecipientTokenAccount",
+      "msg": "Token account not owned by recipient"
     }
   ]
 };

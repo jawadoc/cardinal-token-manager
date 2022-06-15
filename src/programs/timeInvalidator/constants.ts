@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import * as TIME_INVALIDATOR_TYPES from "../../idl/cardinal_time_invalidator";
 
 export const TIME_INVALIDATOR_ADDRESS = new PublicKey(
-  "6pBkL3sgvaaPj226cY1huGCu9ytcYneQ2dZB49HY5CpG"
+  "vtiRVcPp7TjXUFgCwFGMDgKLZdbqY4dZJiWKYCv9Gb8"
 );
 
 export const TIME_INVALIDATOR_SEED = "time-invalidator";
