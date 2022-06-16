@@ -74,7 +74,12 @@ export type CardinalCollateralManager = {
           "isSigner": true
         },
         {
-          "name": "payerTokenAccount",
+          "name": "payerCollateralTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -125,7 +130,7 @@ export type CardinalCollateralManager = {
           "isSigner": false
         },
         {
-          "name": "recipientTokenAccount",
+          "name": "recipientCollateralTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -133,6 +138,11 @@ export type CardinalCollateralManager = {
           "name": "collector",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "invalidator",
+          "isMut": false,
+          "isSigner": true
         },
         {
           "name": "tokenProgram",
@@ -395,7 +405,12 @@ export const IDL: CardinalCollateralManager = {
           "isSigner": true
         },
         {
-          "name": "payerTokenAccount",
+          "name": "payerCollateralTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -446,7 +461,7 @@ export const IDL: CardinalCollateralManager = {
           "isSigner": false
         },
         {
-          "name": "recipientTokenAccount",
+          "name": "recipientCollateralTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -454,6 +469,11 @@ export const IDL: CardinalCollateralManager = {
           "name": "collector",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "invalidator",
+          "isMut": false,
+          "isSigner": true
         },
         {
           "name": "tokenProgram",

@@ -1,9 +1,9 @@
 use {
     crate::{errors::ErrorCode, state::*},
     anchor_lang::prelude::*,
-    anchor_spl::token::{self, Token, TokenAccount, Transfer},
+    anchor_spl::token::{self, Token, TokenAccount, Transfer, Approve},
     cardinal_payment_manager::program::CardinalPaymentManager,
-    cardinal_token_manager::{state::TokenManager, program::CardinalTokenManager, utils::assert_payment_token_account},
+    cardinal_token_manager::{state::{TokenManager, TokenManagerKind}, program::CardinalTokenManager, utils::assert_payment_token_account},
 };
 
 #[derive(Accounts)]
@@ -26,12 +26,17 @@ pub struct DepositCtx<'info> {
     #[account(mut)]
     payer: Signer<'info>,
     #[account(mut, constraint =
-        payer_token_account.owner == payer.key()
-        && payer_token_account.mint == collateral_manager.collateral_mint
+        payer_collateral_token_account.owner == payer.key()
+        && payer_collateral_token_account.mint == collateral_manager.collateral_mint
         @ ErrorCode::InvalidPayerTokenAccount
     )]
-    payer_token_account: Box<Account<'info, TokenAccount>>,
-
+    payer_collateral_token_account: Box<Account<'info, TokenAccount>>,
+    #[account(mut, constraint =
+        recipient_token_account.owner == payer.key()
+        && recipient_token_account.mint == token_manager.mint
+        @ ErrorCode::InvalidRecipientTokenAccount
+    )]
+    recipient_token_account: Box<Account<'info, TokenAccount>>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     claim_receipt: UncheckedAccount<'info>,
@@ -48,11 +53,12 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
     assert_payment_token_account(&ctx.accounts.collateral_token_account, &ctx.accounts.token_manager, remaining_accs)?;
 
     let collateral_manager = &mut ctx.accounts.collateral_manager;
+    let token_manager = &ctx.accounts.token_manager;
 
     if ctx.accounts.payment_manager.owner.key() == ctx.accounts.cardinal_payment_manager.key() {
         let cpi_accounts = cardinal_payment_manager::cpi::accounts::HandlePaymentCtx {
             payment_manager: ctx.accounts.payment_manager.to_account_info(),
-            payer_token_account: ctx.accounts.payer_token_account.to_account_info(),
+            payer_token_account: ctx.accounts.payer_collateral_token_account.to_account_info(),
             fee_collector_token_account: ctx.accounts.fee_collector_token_account.to_account_info(),
             payment_token_account: ctx.accounts.collateral_token_account.to_account_info(),
             payer: ctx.accounts.payer.to_account_info(),
@@ -62,7 +68,7 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
         cardinal_payment_manager::cpi::manage_payment(cpi_ctx, collateral_manager.collateral_amount)?;
     } else {
         let cpi_accounts = Transfer {
-            from: ctx.accounts.payer_token_account.to_account_info(),
+            from: ctx.accounts.payer_collateral_token_account.to_account_info(),
             to: ctx.accounts.collateral_token_account.to_account_info(),
             authority: ctx.accounts.payer.to_account_info(),
         };
@@ -71,12 +77,23 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
         token::transfer(cpi_context, collateral_manager.collateral_amount)?;
     }
 
-
+    // set account delegate of recipient token account to token manager PDA in case of unmanaged token
+    if token_manager.kind == TokenManagerKind::Unmanaged as u8 {
+        let cpi_accounts = Approve {
+            to: ctx.accounts.recipient_token_account.to_account_info(),
+            delegate: token_manager.to_account_info(),
+            authority: ctx.accounts.payer.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
+        token::approve(cpi_context, token_manager.amount)?;
+    }
+    
     let token_manager_key = ctx.accounts.token_manager.key();
     let collateral_manager_seeds = &[COLLATERAL_MANAGER_SEED.as_bytes(), token_manager_key.as_ref(), &[collateral_manager.bump]];
     let claim_approver_signer = &[&collateral_manager_seeds[..]];
 
-    // approve
+    // generate claim receipt
     let cpi_accounts = cardinal_token_manager::cpi::accounts::CreateClaimReceiptCtx {
         token_manager: ctx.accounts.token_manager.to_account_info(),
         claim_approver: collateral_manager.to_account_info(),

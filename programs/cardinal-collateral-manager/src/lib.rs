@@ -4,7 +4,7 @@ pub mod state;
 
 use {anchor_lang::prelude::*, instructions::*};
 
-declare_id!("vcmVnNNod8qTzr3n3WDkDSaSckJF9xYVU8hmtdSjWuX");
+declare_id!("t7vjju88Hj9imjKujtWUJDfRMjsyh9p8Egz6Cw59GA3");
 
 #[program]
 pub mod cardinal_collateral_manager {
