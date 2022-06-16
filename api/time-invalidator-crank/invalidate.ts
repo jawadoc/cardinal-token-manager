@@ -11,9 +11,11 @@ import {
   TokenManagerState,
   withRemainingAccountsForReturn,
 } from "@onchain_org/token-manager/dist/cjs/programs/tokenManager";
+import { shouldTimeInvalidate } from "@cardinal/token-manager/dist/cjs/programs/timeInvalidator/utils";
 import { BN, utils } from "@project-serum/anchor";
 import { SignerWallet } from "@saberhq/solana-contrib";
 import {
+  Connection,
   Keypair,
   sendAndConfirmRawTransaction,
   Transaction,
@@ -49,12 +51,29 @@ export const shouldTimeInvalidate = (
             tokenManagerData.parsed.stateChangedAt.add(
               timeInvalidatorData.parsed.durationSeconds
             )
-          )))
+          ))))
+}
+
+const getSolanaClock = async (
+  connection: Connection
+): Promise<number | null> => {
+  const epochInfo = await connection.getEpochInfo();
+  const blockTimeInEpoch = await connection.getBlockTime(
+    epochInfo.absoluteSlot
   );
+  return blockTimeInEpoch;
 };
 
 const main = async (cluster: string) => {
   const connection = connectionFor(cluster);
+  const startTime = Date.now() / 1000;
+  let solanaClock = await getSolanaClock(connection);
+  if (!solanaClock) {
+    console.log(
+      `[Error] Failed to get solana clock falling back to local time (${startTime})`
+    );
+    solanaClock = startTime;
+  }
 
   const allTimeInvalidators =
     await programs.timeInvalidator.accounts.getAllTimeInvalidators(connection);
@@ -116,7 +135,13 @@ const main = async (cluster: string) => {
             timeInvalidatorData.parsed.tokenManager
           )
         );
-      } else if (shouldTimeInvalidate(tokenManagerData, timeInvalidatorData)) {
+      } else if (
+        shouldTimeInvalidate(
+          tokenManagerData,
+          timeInvalidatorData,
+          solanaClock + (Date.now() / 1000 - startTime)
+        )
+      ) {
         const tokenManagerTokenAccountId =
           await withFindOrInitAssociatedTokenAccount(
             transaction,

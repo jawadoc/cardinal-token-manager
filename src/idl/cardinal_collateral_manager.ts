@@ -1,5 +1,5 @@
 export type CardinalCollateralManager = {
-  "version": "1.4.3",
+  "version": "1.4.6",
   "name": "cardinal_collateral_manager",
   "instructions": [
     {
@@ -330,7 +330,7 @@ export type CardinalCollateralManager = {
 };
 
 export const IDL: CardinalCollateralManager = {
-  "version": "1.4.3",
+  "version": "1.4.6",
   "name": "cardinal_collateral_manager",
   "instructions": [
     {

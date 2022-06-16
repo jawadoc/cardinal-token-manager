@@ -20,6 +20,7 @@ import type { ClaimApproverParams } from "./programs/claimApprover/instruction";
 import type { CollateralManagerParams } from "./programs/collateralManager/instruction";
 import type { TimeInvalidationParams } from "./programs/timeInvalidator/instruction";
 import { shouldTimeInvalidate } from "./programs/timeInvalidator/utils";
+import type { TokenManagerData } from "./programs/tokenManager";
 import {
   InvalidationType,
   TokenManagerKind,
@@ -31,6 +32,7 @@ import {
   withRemainingAccountsForReturn,
 } from "./programs/tokenManager/utils";
 import type { UseInvalidationParams } from "./programs/useInvalidator/instruction";
+import type { AccountData } from "./utils";
 import { tryGetAccount, withFindOrInitAssociatedTokenAccount } from "./utils";
 
 export type IssueParameters = {
@@ -495,7 +497,8 @@ export const withInvalidate = async (
   transaction: Transaction,
   connection: Connection,
   wallet: Wallet,
-  mintId: PublicKey
+  mintId: PublicKey,
+  UTCNow: number = Date.now() / 1000
 ): Promise<Transaction> => {
   const tokenManagerId = await tokenManagerAddressFromMint(connection, mintId);
 
@@ -567,7 +570,7 @@ export const withInvalidate = async (
     );
   } else if (
     timeInvalidatorData &&
-    shouldTimeInvalidate(tokenManagerData, timeInvalidatorData)
+    shouldTimeInvalidate(tokenManagerData, timeInvalidatorData, UTCNow)
   ) {
     transaction.add(
       await timeInvalidator.instruction.invalidate(
@@ -612,6 +615,43 @@ export const withInvalidate = async (
       )
     );
   }
+  return transaction;
+};
+
+export const withReturn = async (
+  transaction: Transaction,
+  connection: Connection,
+  wallet: Wallet,
+  tokenManagerData: AccountData<TokenManagerData>
+): Promise<Transaction> => {
+  const tokenManagerTokenAccountId = await withFindOrInitAssociatedTokenAccount(
+    transaction,
+    connection,
+    tokenManagerData.parsed.mint,
+    tokenManagerData.pubkey,
+    wallet.publicKey,
+    true
+  );
+  const remainingAccountsForReturn = await withRemainingAccountsForReturn(
+    transaction,
+    connection,
+    wallet,
+    tokenManagerData
+  );
+
+  transaction.add(
+    await tokenManager.instruction.invalidate(
+      connection,
+      wallet,
+      tokenManagerData.parsed.mint,
+      tokenManagerData.pubkey,
+      tokenManagerData.parsed.kind,
+      tokenManagerData.parsed.state,
+      tokenManagerTokenAccountId,
+      tokenManagerData?.parsed.recipientTokenAccount,
+      remainingAccountsForReturn
+    )
+  );
   return transaction;
 };
 
