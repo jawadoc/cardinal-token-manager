@@ -521,22 +521,30 @@ export const withInvalidate = async (
     timeInvalidator.pda.findTimeInvalidatorAddress(tokenManagerId),
   ]);
 
-  const [useInvalidatorData, timeInvalidatorData, tokenManagerData] =
-    await Promise.all([
-      tryGetAccount(() =>
-        useInvalidator.accounts.getUseInvalidator(connection, useInvalidatorId)
-      ),
-      tryGetAccount(() =>
-        timeInvalidator.accounts.getTimeInvalidator(
-          connection,
-          timeInvalidatorId
-        )
-      ),
-      tryGetAccount(() =>
-        tokenManager.accounts.getTokenManager(connection, tokenManagerId)
-      ),
-    ]);
+  const [
+    useInvalidatorData,
+    timeInvalidatorData,
+    collateralManagerData,
+    tokenManagerData,
+  ] = await Promise.all([
+    tryGetAccount(() =>
+      useInvalidator.accounts.getUseInvalidator(connection, useInvalidatorId)
+    ),
+    tryGetAccount(() =>
+      timeInvalidator.accounts.getTimeInvalidator(connection, timeInvalidatorId)
+    ),
+    tryGetAccount(() =>
+      collateralManager.accounts.getCollateralManager(
+        connection,
+        tokenManagerId
+      )
+    ),
+    tryGetAccount(() =>
+      tokenManager.accounts.getTokenManager(connection, tokenManagerId)
+    ),
+  ]);
 
+  console.log(collateralManagerData);
   if (!tokenManagerData) return transaction;
 
   const tokenManagerTokenAccountId = await withFindOrInitAssociatedTokenAccount(
@@ -554,6 +562,38 @@ export const withInvalidate = async (
     wallet,
     tokenManagerData
   );
+
+  if (collateralManagerData) {
+    const collateralManagerTokenAccountId =
+      await withFindOrInitAssociatedTokenAccount(
+        transaction,
+        connection,
+        collateralManagerData.parsed.collateralMint,
+        collateralManagerData.pubkey,
+        wallet.publicKey,
+        true
+      );
+
+    const recipientTokenAccountId = await withFindOrInitAssociatedTokenAccount(
+      transaction,
+      connection,
+      collateralManagerData.parsed.collateralMint,
+      wallet.publicKey,
+      wallet.publicKey
+    );
+
+    console.log("I am colateral");
+
+    transaction.add(
+      await collateralManager.instruction.withdraw(
+        connection,
+        wallet,
+        tokenManagerId,
+        collateralManagerTokenAccountId,
+        recipientTokenAccountId
+      )
+    );
+  }
 
   if (
     useInvalidatorData &&

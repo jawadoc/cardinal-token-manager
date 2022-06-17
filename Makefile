@@ -32,7 +32,7 @@ start:
 		--bpf-program ./target/deploy/cardinal_payment_manager-keypair.json ./target/deploy/cardinal_payment_manager.so \
 		--bpf-program ./target/deploy/cardinal_collateral_manager-keypair.json ./target/deploy/cardinal_collateral_manager.so \
 		--reset --quiet & echo $$! > validator.PID
-	sleep 5
+	sleep 10
 	solana-keygen pubkey ./tests/test-key.json
 	solana airdrop 1000 $(TEST_KEY) --url http://localhost:8899
 
