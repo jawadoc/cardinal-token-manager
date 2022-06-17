@@ -11,7 +11,9 @@ pub struct DepositCtx<'info> {
     #[account(constraint = collateral_manager.key() == token_manager.claim_approver.expect("No claim approver found") @ ErrorCode::InvalidTokenManager)]
     token_manager: Box<Account<'info, TokenManager>>,
 
-    #[account(mut, constraint = collateral_token_account.mint == collateral_manager.collateral_mint @ ErrorCode::InvalidPaymentTokenAccount)]
+    #[account(mut, constraint = collateral_token_account.mint == collateral_manager.collateral_mint 
+        && collateral_token_account.owner == collateral_manager.key()
+        @ ErrorCode::InvalidPaymentTokenAccount)]
     collateral_token_account: Box<Account<'info, TokenAccount>>,
     #[account(mut, constraint = fee_collector_token_account.mint == collateral_manager.collateral_mint @ ErrorCode::InvalidPaymentMint)]
     fee_collector_token_account: Box<Account<'info, TokenAccount>>,
@@ -50,7 +52,6 @@ pub struct DepositCtx<'info> {
 
 pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts, 'remaining, 'info, DepositCtx<'info>>) -> Result<()> {
     let remaining_accs = &mut ctx.remaining_accounts.iter();
-    assert_payment_token_account(&ctx.accounts.collateral_token_account, &ctx.accounts.token_manager, remaining_accs)?;
 
     let collateral_manager = &mut ctx.accounts.collateral_manager;
     let token_manager = &ctx.accounts.token_manager;
@@ -81,7 +82,7 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
     if token_manager.kind == TokenManagerKind::Unmanaged as u8 {
         let cpi_accounts = Approve {
             to: ctx.accounts.recipient_token_account.to_account_info(),
-            delegate: token_manager.to_account_info(),
+            delegate: collateral_manager.to_account_info(),
             authority: ctx.accounts.payer.to_account_info(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();

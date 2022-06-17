@@ -1,7 +1,7 @@
 export type CardinalTimeInvalidator = {
-  version: "1.4.6";
-  name: "cardinal_time_invalidator";
-  instructions: [
+  "version": "1.4.6",
+  "name": "cardinal_time_invalidator",
+  "instructions": [
     {
       "name": "init",
       "accounts": [
@@ -402,9 +402,9 @@ export type CardinalTimeInvalidator = {
 };
 
 export const IDL: CardinalTimeInvalidator = {
-  version: "1.4.6",
-  name: "cardinal_time_invalidator",
-  instructions: [
+  "version": "1.4.6",
+  "name": "cardinal_time_invalidator",
+  "instructions": [
     {
       "name": "init",
       "accounts": [

@@ -1,19 +1,15 @@
 import { BN } from "@project-serum/anchor";
 import { expectTXTable } from "@saberhq/chai-solana";
-import {
-  SignerWallet,
-  SolanaProvider,
-  TransactionEnvelope,
-} from "@saberhq/solana-contrib";
+import { SignerWallet, SolanaProvider, TransactionEnvelope } from "@saberhq/solana-contrib";
 import type { Token } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
 import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 
-import { findAta, rentals, invalidate, tryGetAccount } from "../src";
-import { tokenManager, collateralManager } from "../src/programs";
+import { findAta, rentals } from "../src";
+import { collateralManager, tokenManager } from "../src/programs";
 import { CollateralManagerState } from "../src/programs/collateralManager";
-import { TokenManagerState } from "../src/programs/tokenManager";
+import { TokenManagerKind, TokenManagerState } from "../src/programs/tokenManager";
 import { createMint } from "./utils";
 import { getProvider } from "./workspace";
 
@@ -26,7 +22,7 @@ describe("Create and Extend Collateral Rental", () => {
   let issuerTokenAccountId: PublicKey;
   let paymentMint: Token;
   let rentalMint: Token;
-  let expiration: number;
+  //   let expiration: number;
 
   before(async () => {
     const provider = getProvider();
@@ -49,6 +45,8 @@ describe("Create and Extend Collateral Rental", () => {
       recipient.publicKey,
       RECIPIENT_START_PAYMENT_AMOUNT
     );
+
+    console.log(recipientPaymentTokenAccountId);
 
     // create rental mint
     [issuerTokenAccountId, rentalMint] = await createMint(
@@ -82,6 +80,7 @@ describe("Create and Extend Collateral Rental", () => {
         mint: rentalMint.publicKey,
         issuerTokenAccountId: issuerTokenAccountId,
         amount: new BN(1),
+        kind: TokenManagerKind.Unmanaged,
       }
     );
     const txEnvelope = new TransactionEnvelope(
@@ -129,7 +128,16 @@ describe("Create and Extend Collateral Rental", () => {
         tokenManagerId
       );
     expect(collateralManagerData.parsed.state).to.eq(
-      CollateralManagerState.Deposited
+      CollateralManagerState.Initialized
+    );
+    expect(collateralManagerData.parsed.collateralAmount.toNumber()).to.eq(
+      RENTAL_PAYMENT_AMONT
+    );
+    expect(collateralManagerData.parsed.collateralMint).to.eqAddress(
+      paymentMint.publicKey
+    );
+    expect(collateralManagerData.parsed.tokenManager).to.eqAddress(
+      tokenManagerId
     );
   });
 
@@ -177,7 +185,7 @@ describe("Create and Extend Collateral Rental", () => {
       await findAta(rentalMint.publicKey, recipient.publicKey)
     );
     expect(checkRecipientTokenAccount.amount.toNumber()).to.eq(1);
-    expect(checkRecipientTokenAccount.isFrozen).to.eq(true);
+    expect(checkRecipientTokenAccount.isFrozen).to.eq(false);
 
     const checkRecipientPaymentTokenAccount = await paymentMint.getAccountInfo(
       recipientPaymentTokenAccountId
@@ -185,44 +193,64 @@ describe("Create and Extend Collateral Rental", () => {
     expect(checkRecipientPaymentTokenAccount.amount.toNumber()).to.eq(
       RECIPIENT_START_PAYMENT_AMOUNT - RENTAL_PAYMENT_AMONT
     );
+
+    const collateralManagerData =
+      await collateralManager.accounts.getCollateralManager(
+        provider.connection,
+        tokenManagerId
+      );
+    expect(collateralManagerData.parsed.state).to.eq(
+      CollateralManagerState.Deposited
+    );
+    const checkCollateralTokenAccount = await paymentMint.getAccountInfo(
+      await findAta(
+        collateralManagerData.parsed.collateralMint,
+        collateralManagerData.pubkey,
+        true
+      )
+    );
+    expect(checkCollateralTokenAccount.amount.toNumber()).to.eq(
+      RENTAL_PAYMENT_AMONT
+    );
   });
-  it("Invalidate", async () => {
-    await new Promise((r) => setTimeout(r, 2000));
 
-    const provider = getProvider();
-    const transaction = await invalidate(
-      provider.connection,
-      new SignerWallet(recipient),
-      rentalMint.publicKey
-    );
+  // it("Invalidate", async () => {
+  //   await new Promise((r) => setTimeout(r, 2000));
 
-    const txEnvelope = new TransactionEnvelope(
-      SolanaProvider.init({
-        connection: provider.connection,
-        wallet: new SignerWallet(recipient),
-        opts: provider.opts,
-      }),
-      [...transaction.instructions]
-    );
+  //   const provider = getProvider();
+  //   const transaction = await invalidate(
+  //     provider.connection,
+  //     new SignerWallet(recipient),
+  //     rentalMint.publicKey
+  //   );
 
-    await expectTXTable(txEnvelope, "use", {
-      verbosity: "error",
-      formatLogs: true,
-    }).to.be.fulfilled;
+  //   const txEnvelope = new TransactionEnvelope(
+  //     SolanaProvider.init({
+  //       connection: provider.connection,
+  //       wallet: new SignerWallet(recipient),
+  //       opts: provider.opts,
+  //     }),
+  //     [...transaction.instructions]
+  //   );
 
-    const tokenManagerId = await tokenManager.pda.tokenManagerAddressFromMint(
-      provider.connection,
-      rentalMint.publicKey
-    );
+  //   await expectTXTable(txEnvelope, "use", {
+  //     verbosity: "error",
+  //     formatLogs: true,
+  //   }).to.be.fulfilled;
 
-    const tokenManagerData = await tryGetAccount(() =>
-      tokenManager.accounts.getTokenManager(provider.connection, tokenManagerId)
-    );
-    expect(tokenManagerData).to.eq(null);
+  //   const tokenManagerId = await tokenManager.pda.tokenManagerAddressFromMint(
+  //     provider.connection,
+  //     rentalMint.publicKey
+  //   );
 
-    const checkIssuerTokenAccount = await rentalMint.getAccountInfo(
-      issuerTokenAccountId
-    );
-    expect(checkIssuerTokenAccount.amount.toNumber()).to.eq(1);
-  });
+  //   const tokenManagerData = await tryGetAccount(() =>
+  //     tokenManager.accounts.getTokenManager(provider.connection, tokenManagerId)
+  //   );
+  //   expect(tokenManagerData).to.eq(null);
+
+  //   const checkIssuerTokenAccount = await rentalMint.getAccountInfo(
+  //     issuerTokenAccountId
+  //   );
+  //   expect(checkIssuerTokenAccount.amount.toNumber()).to.eq(1);
+  // });
 });

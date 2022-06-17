@@ -10,11 +10,11 @@ install:
 test-keys:
 	mkdir -p target/deploy
 	cp -r tests/test-keypairs/* target/deploy
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/mgr99QFMYByTqGPWmNqunV7vBLmWWXdSrHUfV8Jf3JM/$$(solana-keygen pubkey tests/test-keypairs/cardinal_token_manager-keypair.json)/g" {} +
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/pcaBwhJ1YHp7UDA7HASpQsRUmUNwzgYaLQto2kSj1fR/$$(solana-keygen pubkey tests/test-keypairs/cardinal_paid_claim_approver-keypair.json)/g" {} +
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/tmeEDp1RgoDtZFtx6qod3HkbQmv9LMe36uqKVvsLTDE/$$(solana-keygen pubkey tests/test-keypairs/cardinal_time_invalidator-keypair.json)/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/vtmaopgPztD3WrNgYNrGFbtfUkcgVSxk6U8eycqQTPD/$$(solana-keygen pubkey tests/test-keypairs/cardinal_token_manager-keypair.json)/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/vpcKZrRAFr73Ty4W4bFM4xCWhxk1Whd9mHB1uuvFAKQ/$$(solana-keygen pubkey tests/test-keypairs/cardinal_paid_claim_approver-keypair.json)/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/vtiRVcPp7TjXUFgCwFGMDgKLZdbqY4dZJiWKYCv9Gb8/$$(solana-keygen pubkey tests/test-keypairs/cardinal_time_invalidator-keypair.json)/g" {} +
 	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/useZ65tbyvWpdYCLDJaegGK34Lnsi8S3jZdwx8122qp/$$(solana-keygen pubkey tests/test-keypairs/cardinal_use_invalidator-keypair.json)/g" {} +
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/pmvYY6Wgvpe3DEj3UX1FcRpMx43sMLYLJrFTVGcqpdn/$$(solana-keygen pubkey tests/test-keypairs/cardinal_payment_manager-keypair.json)/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/vpm5Gp95SYVyqwZz5zia5YsUNe7Kd6P7tFCC7GcXGbe/$$(solana-keygen pubkey tests/test-keypairs/cardinal_payment_manager-keypair.json)/g" {} +
 	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/vcmVnNNod8qTzr3n3WDkDSaSckJF9xYVU8hmtdSjWuX/$$(solana-keygen pubkey tests/test-keypairs/cardinal_collateral_manager-keypair.json)/g" {} +
 
 
@@ -23,7 +23,7 @@ build:
 	yarn idl:generate
 
 start:
-	solana-test-validator --url https://api.mainnet-beta.solana.com \
+	solana-test-validator --url https://api.devnet.solana.com \
 		--clone metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s --clone PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT \
 		--bpf-program ./target/deploy/cardinal_token_manager-keypair.json ./target/deploy/cardinal_token_manager.so \
 		--bpf-program ./target/deploy/cardinal_paid_claim_approver-keypair.json ./target/deploy/cardinal_paid_claim_approver.so \
@@ -40,11 +40,11 @@ test:
 	anchor test --skip-local-validator --skip-build --skip-deploy --provider.cluster localnet
 
 clean-test-keys:
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_token_manager-keypair.json)/mgr99QFMYByTqGPWmNqunV7vBLmWWXdSrHUfV8Jf3JM/g" {} +
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_paid_claim_approver-keypair.json)/pcaBwhJ1YHp7UDA7HASpQsRUmUNwzgYaLQto2kSj1fR/g" {} +
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_time_invalidator-keypair.json)/tmeEDp1RgoDtZFtx6qod3HkbQmv9LMe36uqKVvsLTDE/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_token_manager-keypair.json)/vtmaopgPztD3WrNgYNrGFbtfUkcgVSxk6U8eycqQTPD/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_paid_claim_approver-keypair.json)/vpcKZrRAFr73Ty4W4bFM4xCWhxk1Whd9mHB1uuvFAKQ/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_time_invalidator-keypair.json)/vtiRVcPp7TjXUFgCwFGMDgKLZdbqY4dZJiWKYCv9Gb8/g" {} +
 	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_use_invalidator-keypair.json)/useZ65tbyvWpdYCLDJaegGK34Lnsi8S3jZdwx8122qp/g" {} +
-	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_payment_manager-keypair.json)/pmvYY6Wgvpe3DEj3UX1FcRpMx43sMLYLJrFTVGcqpdn/g" {} +
+	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_payment_manager-keypair.json)/vpm5Gp95SYVyqwZz5zia5YsUNe7Kd6P7tFCC7GcXGbe/g" {} +
 	LC_ALL=C find programs src -type f -exec sed -i '' -e "s/$$(solana-keygen pubkey tests/test-keypairs/cardinal_collateral_manager-keypair.json)/vcmVnNNod8qTzr3n3WDkDSaSckJF9xYVU8hmtdSjWuX/g" {} +
 
 stop:

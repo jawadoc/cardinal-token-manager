@@ -78,6 +78,8 @@ export const deposit = async (
   wallet: Wallet,
   tokenManagerId: PublicKey,
   payerTokenAccountId: PublicKey,
+  recipientTokenAccountId: PublicKey,
+  collateralTokenAccountId: PublicKey,
   paymentManager: PublicKey,
   paymentAccounts: [PublicKey, PublicKey, AccountMeta[]]
 ): Promise<TransactionInstruction> => {
@@ -97,18 +99,17 @@ export const deposit = async (
   const [collateralManagerId] = await findCollateralManagerAddress(
     tokenManagerId
   );
-  const [paymentTokenAccountId, feeCollectorTokenAccount, remainingAccounts] =
-    paymentAccounts;
+  const [_, feeCollectorTokenAccount, remainingAccounts] = paymentAccounts;
   return collateralManagerProgram.instruction.deposit({
     accounts: {
       tokenManager: tokenManagerId,
-      collateralTokenAccount: paymentTokenAccountId,
+      collateralTokenAccount: collateralTokenAccountId,
       feeCollectorTokenAccount: feeCollectorTokenAccount,
       paymentManager: paymentManager,
       collateralManager: collateralManagerId,
       payer: wallet.publicKey,
       payerCollateralTokenAccount: payerTokenAccountId,
-      recipientTokenAccount: payerTokenAccountId,
+      recipientTokenAccount: recipientTokenAccountId,
       claimReceipt: claimReceiptId,
       cardinalTokenManager: TOKEN_MANAGER_ADDRESS,
       cardinalPaymentManager: PAYMENT_MANAGER_ADDRESS,

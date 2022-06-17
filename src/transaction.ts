@@ -294,6 +294,8 @@ export const withIssueToken = async (
     );
   }
 
+  transaction.instructions.map((t) => console.log(t.programId.toBase58()));
+  // console.log(transaction.instructions)
   return [transaction, tokenManagerId, otp];
 };
 
@@ -329,6 +331,22 @@ export const withClaimToken = async (
         )
       ),
     ]);
+
+  const tokenManagerTokenAccountId = await Token.getAssociatedTokenAddress(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    tokenManagerData.parsed.mint,
+    tokenManagerId,
+    true
+  );
+
+  const recipientTokenAccountId = await withFindOrInitAssociatedTokenAccount(
+    transaction,
+    connection,
+    tokenManagerData.parsed.mint,
+    wallet.publicKey,
+    additionalOptions?.payer ?? wallet.publicKey
+  );
 
   let claimReceiptId;
   // pay claim approver
@@ -375,6 +393,16 @@ export const withClaimToken = async (
     tokenManagerData.parsed.claimApprover.toString() ===
       collateralManagerData.pubkey.toString()
   ) {
+    const collateralManagerTokenAccountId =
+      await withFindOrInitAssociatedTokenAccount(
+        transaction,
+        connection,
+        collateralManagerData.parsed.collateralMint,
+        collateralManagerData.pubkey,
+        additionalOptions?.payer ?? wallet.publicKey,
+        true
+      );
+
     const payerTokenAccountId = await findAta(
       collateralManagerData.parsed.collateralMint,
       wallet.publicKey
@@ -402,6 +430,8 @@ export const withClaimToken = async (
         wallet,
         tokenManagerId,
         payerTokenAccountId,
+        recipientTokenAccountId,
+        collateralManagerTokenAccountId,
         collateralManagerData.parsed.paymentManager,
         paymentAccounts
       )
@@ -426,22 +456,6 @@ export const withClaimToken = async (
     transaction.add(createClaimReceiptIx);
     claimReceiptId = claimReceipt;
   }
-
-  const tokenManagerTokenAccountId = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    tokenManagerData.parsed.mint,
-    tokenManagerId,
-    true
-  );
-
-  const recipientTokenAccountId = await withFindOrInitAssociatedTokenAccount(
-    transaction,
-    connection,
-    tokenManagerData.parsed.mint,
-    wallet.publicKey,
-    additionalOptions?.payer ?? wallet.publicKey
-  );
 
   // claim
   transaction.add(
