@@ -135,6 +135,11 @@ export type CardinalCollateralManager = {
           "isSigner": false
         },
         {
+          "name": "recipientTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "collector",
           "isMut": true,
           "isSigner": false
@@ -462,6 +467,11 @@ export const IDL: CardinalCollateralManager = {
         },
         {
           "name": "recipientCollateralTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
           "isMut": true,
           "isSigner": false
         },

@@ -125,7 +125,9 @@ export const withdraw = async (
   wallet: Wallet,
   tokenManagerId: PublicKey,
   collateralTokenAccountId: PublicKey,
-  recipientTokenAccountId: PublicKey
+  recipientCollateralTokenAccountId: PublicKey,
+  recipientTokenAccountId: PublicKey,
+  remainingAccounts: AccountMeta[]
 ): Promise<TransactionInstruction> => {
   const provider = new AnchorProvider(connection, wallet, {});
   const collateralManagerProgram = new Program<COLLATERAL_MANAGER_PROGRAM>(
@@ -137,16 +139,33 @@ export const withdraw = async (
   const [collateralManagerId] = await findCollateralManagerAddress(
     tokenManagerId
   );
+  console.log({
+    accounts: {
+      tokenManager: tokenManagerId.toBase58(),
+      collateralManager: collateralManagerId.toBase58(),
+      collateralTokenAccount: collateralTokenAccountId.toBase58(),
+      recipientCollateralTokenAccount:
+        recipientCollateralTokenAccountId.toBase58(),
+      recipientTokenAccount: recipientTokenAccountId.toBase58(),
+      invalidator: wallet.publicKey.toBase58(),
+      collector: CRANK_KEY.toBase58(),
+      tokenProgram: TOKEN_PROGRAM_ID.toBase58(),
+      remainingAccounts1: remainingAccounts[0]?.pubkey.toBase58(),
+    },
+  });
+
   return collateralManagerProgram.instruction.withdraw({
     accounts: {
       tokenManager: tokenManagerId,
       collateralManager: collateralManagerId,
       collateralTokenAccount: collateralTokenAccountId,
-      recipientCollateralTokenAccount: recipientTokenAccountId,
+      recipientCollateralTokenAccount: recipientCollateralTokenAccountId,
+      recipientTokenAccount: recipientTokenAccountId,
       invalidator: wallet.publicKey,
       collector: CRANK_KEY,
       tokenProgram: TOKEN_PROGRAM_ID,
     },
+    remainingAccounts,
   });
 };
 

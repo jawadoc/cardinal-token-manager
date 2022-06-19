@@ -1,15 +1,22 @@
 import { BN } from "@project-serum/anchor";
 import { expectTXTable } from "@saberhq/chai-solana";
-import { SignerWallet, SolanaProvider, TransactionEnvelope } from "@saberhq/solana-contrib";
+import {
+  SignerWallet,
+  SolanaProvider,
+  TransactionEnvelope,
+} from "@saberhq/solana-contrib";
 import type { Token } from "@solana/spl-token";
 import type { PublicKey } from "@solana/web3.js";
 import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 
-import { findAta, rentals } from "../src";
+import { findAta, invalidate, rentals, tryGetAccount } from "../src";
 import { collateralManager, tokenManager } from "../src/programs";
 import { CollateralManagerState } from "../src/programs/collateralManager";
-import { TokenManagerKind, TokenManagerState } from "../src/programs/tokenManager";
+import {
+  TokenManagerKind,
+  TokenManagerState,
+} from "../src/programs/tokenManager";
 import { createMint } from "./utils";
 import { getProvider } from "./workspace";
 
@@ -45,8 +52,6 @@ describe("Create and Extend Collateral Rental", () => {
       recipient.publicKey,
       RECIPIENT_START_PAYMENT_AMOUNT
     );
-
-    console.log(recipientPaymentTokenAccountId);
 
     // create rental mint
     [issuerTokenAccountId, rentalMint] = await createMint(
@@ -214,43 +219,45 @@ describe("Create and Extend Collateral Rental", () => {
     );
   });
 
-  // it("Invalidate", async () => {
-  //   await new Promise((r) => setTimeout(r, 2000));
+  it("Invalidate", async () => {
+    await new Promise((r) => setTimeout(r, 2000));
+    const provider = getProvider();
 
-  //   const provider = getProvider();
-  //   const transaction = await invalidate(
-  //     provider.connection,
-  //     new SignerWallet(recipient),
-  //     rentalMint.publicKey
-  //   );
+    const tokenManagerId = await tokenManager.pda.tokenManagerAddressFromMint(
+      provider.connection,
+      rentalMint.publicKey
+    );
 
-  //   const txEnvelope = new TransactionEnvelope(
-  //     SolanaProvider.init({
-  //       connection: provider.connection,
-  //       wallet: new SignerWallet(recipient),
-  //       opts: provider.opts,
-  //     }),
-  //     [...transaction.instructions]
-  //   );
+    const transaction = await invalidate(
+      provider.connection,
+      new SignerWallet(recipient),
+      rentalMint.publicKey
+    );
 
-  //   await expectTXTable(txEnvelope, "use", {
-  //     verbosity: "error",
-  //     formatLogs: true,
-  //   }).to.be.fulfilled;
+    transaction.instructions.map((i) => console.log(i.programId.toBase58()));
 
-  //   const tokenManagerId = await tokenManager.pda.tokenManagerAddressFromMint(
-  //     provider.connection,
-  //     rentalMint.publicKey
-  //   );
+    const txEnvelope = new TransactionEnvelope(
+      SolanaProvider.init({
+        connection: provider.connection,
+        wallet: new SignerWallet(recipient),
+        opts: provider.opts,
+      }),
+      [...transaction.instructions]
+    );
 
-  //   const tokenManagerData = await tryGetAccount(() =>
-  //     tokenManager.accounts.getTokenManager(provider.connection, tokenManagerId)
-  //   );
-  //   expect(tokenManagerData).to.eq(null);
+    await expectTXTable(txEnvelope, "use", {
+      verbosity: "error",
+      formatLogs: true,
+    }).to.be.fulfilled;
 
-  //   const checkIssuerTokenAccount = await rentalMint.getAccountInfo(
-  //     issuerTokenAccountId
-  //   );
-  //   expect(checkIssuerTokenAccount.amount.toNumber()).to.eq(1);
-  // });
+    const tokenManagerData = await tryGetAccount(() =>
+      tokenManager.accounts.getTokenManager(provider.connection, tokenManagerId)
+    );
+    expect(tokenManagerData).to.eq(null);
+
+    const checkIssuerTokenAccount = await rentalMint.getAccountInfo(
+      issuerTokenAccountId
+    );
+    expect(checkIssuerTokenAccount.amount.toNumber()).to.eq(1);
+  });
 });

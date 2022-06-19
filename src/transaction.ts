@@ -574,13 +574,14 @@ export const withInvalidate = async (
         true
       );
 
-    const recipientTokenAccountId = await withFindOrInitAssociatedTokenAccount(
-      transaction,
-      connection,
-      collateralManagerData.parsed.collateralMint,
-      wallet.publicKey,
-      wallet.publicKey
-    );
+    const recipientCollateralTokenAccountId =
+      await withFindOrInitAssociatedTokenAccount(
+        transaction,
+        connection,
+        collateralManagerData.parsed.collateralMint,
+        wallet.publicKey,
+        wallet.publicKey
+      );
 
     console.log("I am colateral");
 
@@ -590,7 +591,9 @@ export const withInvalidate = async (
         wallet,
         tokenManagerId,
         collateralManagerTokenAccountId,
-        recipientTokenAccountId
+        recipientCollateralTokenAccountId,
+        tokenManagerData?.parsed.recipientTokenAccount,
+        remainingAccountsForReturn
       )
     );
   }
