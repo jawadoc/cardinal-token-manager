@@ -548,7 +548,6 @@ export const withInvalidate = async (
     ),
   ]);
 
-  console.log(collateralManagerData);
   if (!tokenManagerData) return transaction;
 
   const tokenManagerTokenAccountId = await withFindOrInitAssociatedTokenAccount(

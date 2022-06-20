@@ -25,10 +25,10 @@ pub struct InvalidateCtx<'info> {
     #[account(mut)]
     collector: AccountInfo<'info>,
     // invalidator
-    // #[account(constraint =
-    //     token_manager.invalidators.contains(&invalidator.key())
-    //     || token_manager.recipient_token_account == invalidator.key()
-    // )]
+    #[account(constraint =
+        token_manager.invalidators.contains(&invalidator.key())
+        || recipient_token_account.owner == invalidator.key()
+    )]
     invalidator: Signer<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     token_program: UncheckedAccount<'info>,
@@ -46,14 +46,15 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
     // Transfer token back to original owner
     // for managed and edition, token is transferred automatically on invalidate
     if token_manager.kind == TokenManagerKind::Unmanaged as u8 {
-        
         let recipient_token_account = Account::<TokenAccount>::try_from(&ctx.accounts.recipient_token_account.to_account_info())?;
+        
+        let return_token_account_info = next_account_info(remaining_accs)?;
+        let return_token_account = Account::<TokenAccount>::try_from(return_token_account_info)?;
+        
         if recipient_token_account.delegate.unwrap() == collateral_manager.key() 
             && recipient_token_account.amount > 0 
             && recipient_token_account.delegated_amount > 0
         {
-            let return_token_account_info = next_account_info(remaining_accs)?;
-            let return_token_account = Account::<TokenAccount>::try_from(return_token_account_info)?;
             if token_manager.receipt_mint == None {
                 if return_token_account.owner != token_manager.issuer {
                     return Err(error!(cardinal_error::InvalidIssuerTokenAccount));
@@ -78,6 +79,11 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
                 let cpi_program = ctx.accounts.token_program.to_account_info();
                 let cpi_context = CpiContext::new(cpi_program, cpi_accounts).with_signer(collateral_manager_signer);
                 token::transfer(cpi_context, token_manager.amount)?;
+            }
+        } else {
+            let return_collateral_token_account = Account::<TokenAccount>::try_from(&ctx.accounts.return_collateral_token_account.to_account_info())?;
+            if return_collateral_token_account.owner != token_manager.issuer {
+                return Err(error!(cardinal_error::InvalidIssuerTokenAccount));
             }
         }
     }
