@@ -125,7 +125,7 @@ export const withdraw = async (
   wallet: Wallet,
   tokenManagerId: PublicKey,
   collateralTokenAccountId: PublicKey,
-  recipientCollateralTokenAccountId: PublicKey,
+  returnCollateralTokenAccount: PublicKey,
   recipientTokenAccountId: PublicKey,
   remainingAccounts: AccountMeta[]
 ): Promise<TransactionInstruction> => {
@@ -144,8 +144,7 @@ export const withdraw = async (
       tokenManager: tokenManagerId.toBase58(),
       collateralManager: collateralManagerId.toBase58(),
       collateralTokenAccount: collateralTokenAccountId.toBase58(),
-      recipientCollateralTokenAccount:
-        recipientCollateralTokenAccountId.toBase58(),
+      returnCollateralTokenAccount: returnCollateralTokenAccount.toBase58(),
       recipientTokenAccount: recipientTokenAccountId.toBase58(),
       invalidator: wallet.publicKey.toBase58(),
       collector: CRANK_KEY.toBase58(),
@@ -159,7 +158,7 @@ export const withdraw = async (
       tokenManager: tokenManagerId,
       collateralManager: collateralManagerId,
       collateralTokenAccount: collateralTokenAccountId,
-      recipientCollateralTokenAccount: recipientCollateralTokenAccountId,
+      returnCollateralTokenAccount: returnCollateralTokenAccount,
       recipientTokenAccount: recipientTokenAccountId,
       invalidator: wallet.publicKey,
       collector: CRANK_KEY,

@@ -18,6 +18,10 @@ import {
 } from "./programs";
 import type { ClaimApproverParams } from "./programs/claimApprover/instruction";
 import type { CollateralManagerParams } from "./programs/collateralManager/instruction";
+import {
+  getReturnTokenAccount,
+  withRemainingAccountsForWithdraw,
+} from "./programs/collateralManager/utils";
 import type { TimeInvalidationParams } from "./programs/timeInvalidator/instruction";
 import { shouldTimeInvalidate } from "./programs/timeInvalidator/utils";
 import type { TokenManagerData } from "./programs/tokenManager";
@@ -574,26 +578,30 @@ export const withInvalidate = async (
         true
       );
 
-    const recipientCollateralTokenAccountId =
-      await withFindOrInitAssociatedTokenAccount(
-        transaction,
-        connection,
-        collateralManagerData.parsed.collateralMint,
-        wallet.publicKey,
-        wallet.publicKey
-      );
+    const returnCollateralTokenAccount = await getReturnTokenAccount(
+      transaction,
+      connection,
+      wallet,
+      collateralManagerData,
+      tokenManagerData,
+      true
+    );
 
-    console.log("I am colateral");
-
+    const remainingAccountsForWithdraw = await withRemainingAccountsForWithdraw(
+      transaction,
+      connection,
+      wallet,
+      tokenManagerData
+    );
     transaction.add(
       await collateralManager.instruction.withdraw(
         connection,
         wallet,
         tokenManagerId,
         collateralManagerTokenAccountId,
-        recipientCollateralTokenAccountId,
+        returnCollateralTokenAccount,
         tokenManagerData?.parsed.recipientTokenAccount,
-        remainingAccountsForReturn
+        remainingAccountsForWithdraw
       )
     );
   }
