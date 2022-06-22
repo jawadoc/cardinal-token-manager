@@ -566,50 +566,13 @@ export const withInvalidate = async (
     tokenManagerData
   );
 
-  if (collateralManagerData) {
-    const collateralManagerTokenAccountId =
-      await withFindOrInitAssociatedTokenAccount(
-        transaction,
-        connection,
-        collateralManagerData.parsed.collateralMint,
-        collateralManagerData.pubkey,
-        wallet.publicKey,
-        true
-      );
-
-    const returnCollateralTokenAccount = await getReturnTokenAccount(
-      transaction,
-      connection,
-      wallet,
-      collateralManagerData,
-      tokenManagerData,
-      true
-    );
-
-    const remainingAccountsForWithdraw = await withRemainingAccountsForWithdraw(
-      transaction,
-      connection,
-      wallet,
-      tokenManagerData
-    );
-    transaction.add(
-      await collateralManager.instruction.withdraw(
-        connection,
-        wallet,
-        tokenManagerId,
-        collateralManagerTokenAccountId,
-        returnCollateralTokenAccount,
-        tokenManagerData?.parsed.recipientTokenAccount,
-        remainingAccountsForWithdraw
-      )
-    );
-  }
-
+  let shouldInvalidate = false;
   if (
     useInvalidatorData &&
     useInvalidatorData.parsed.totalUsages &&
     useInvalidatorData.parsed.usages.gte(useInvalidatorData.parsed.totalUsages)
   ) {
+    shouldInvalidate = true;
     transaction.add(
       await useInvalidator.instruction.invalidate(
         connection,
@@ -636,6 +599,7 @@ export const withInvalidate = async (
     timeInvalidatorData &&
     shouldTimeInvalidate(tokenManagerData, timeInvalidatorData, UTCNow)
   ) {
+    shouldInvalidate = true;
     transaction.add(
       await timeInvalidator.instruction.invalidate(
         connection,
@@ -665,6 +629,7 @@ export const withInvalidate = async (
     tokenManagerData.parsed.invalidationType === InvalidationType.Return ||
     tokenManagerData.parsed.invalidationType === InvalidationType.Reissue
   ) {
+    shouldInvalidate = true;
     transaction.add(
       await tokenManager.instruction.invalidate(
         connection,
@@ -678,6 +643,60 @@ export const withInvalidate = async (
         remainingAccountsForReturn
       )
     );
+  }
+
+  // If we have collateral and we can invalidate, withdraw collateral
+  if (collateralManagerData && shouldInvalidate) {
+    const collateralManagerTokenAccountId =
+      await withFindOrInitAssociatedTokenAccount(
+        transaction,
+        connection,
+        collateralManagerData.parsed.collateralMint,
+        collateralManagerData.pubkey,
+        wallet.publicKey,
+        true
+      );
+
+    const returnCollateralTokenAccount = await getReturnTokenAccount(
+      transaction,
+      connection,
+      wallet,
+      collateralManagerData,
+      tokenManagerData,
+      true
+    );
+
+    const remainingAccountsForWithdraw = await withRemainingAccountsForWithdraw(
+      transaction,
+      connection,
+      wallet,
+      tokenManagerData
+    );
+
+    transaction.instructions.splice(
+      0,
+      0,
+      await collateralManager.instruction.withdraw(
+        connection,
+        wallet,
+        tokenManagerId,
+        collateralManagerTokenAccountId,
+        returnCollateralTokenAccount,
+        tokenManagerData?.parsed.recipientTokenAccount,
+        remainingAccountsForWithdraw
+      )
+    );
+    // transaction.add(
+    //   await collateralManager.instruction.withdraw(
+    //     connection,
+    //     wallet,
+    //     tokenManagerId,
+    //     collateralManagerTokenAccountId,
+    //     returnCollateralTokenAccount,
+    //     tokenManagerData?.parsed.recipientTokenAccount,
+    //     remainingAccountsForWithdraw
+    //   )
+    // );
   }
   return transaction;
 };
