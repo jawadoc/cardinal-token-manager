@@ -7,8 +7,8 @@ pub enum CollateralManagerState {
     Initialized = 0,
     /// Collateral is deposited
     Deposited = 1,
-    /// Collateral is invalidated
-    Invalidated = 2,
+    /// Collateral is withdrawn
+    Withdrawn = 2,
 }
 
 pub const COLLATERAL_MANAGER_SEED: &str = "collateral-manager";

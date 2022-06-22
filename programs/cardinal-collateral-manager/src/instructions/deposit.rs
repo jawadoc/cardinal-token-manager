@@ -18,7 +18,7 @@ pub struct DepositCtx<'info> {
     #[account(mut, constraint = fee_collector_token_account.mint == collateral_manager.collateral_mint @ ErrorCode::InvalidPaymentMint)]
     fee_collector_token_account: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut, constraint = collateral_manager.state == CollateralManagerState::Initialized as u8 @ErrorCode::CollateralNotInitialized)]
+    #[account(mut)]
     collateral_manager: Box<Account<'info, CollateralManager>>,
 
     /// CHECK: This is not dangerous because we don't read or write from this account

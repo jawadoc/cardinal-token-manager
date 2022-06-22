@@ -259,7 +259,7 @@ export type CardinalCollateralManager = {
             "name": "Deposited"
           },
           {
-            "name": "Invalidated"
+            "name": "Withdrawn"
           }
         ]
       }
@@ -595,7 +595,7 @@ export const IDL: CardinalCollateralManager = {
             "name": "Deposited"
           },
           {
-            "name": "Invalidated"
+            "name": "Withdrawn"
           }
         ]
       }

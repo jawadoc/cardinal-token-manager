@@ -229,13 +229,13 @@ describe("Create and Revoke Collateral Rental", () => {
 
     expect(checkRecipientTokenAccount.amount.toNumber()).to.eq(1);
 
-    const _checkIssuerTokenAccount = await rentalMint.getAccountInfo(
-      issuerTokenAccountId
-    );
+    const transfer = Keypair.generate();
+    const transferTokenAccount =
+      await rentalMint.getOrCreateAssociatedAccountInfo(transfer.publicKey);
     // Transfer token from recipient to another account
     await rentalMint.transfer(
       checkRecipientTokenAccount.address,
-      _checkIssuerTokenAccount.address,
+      transferTokenAccount.address,
       recipient,
       [],
       1
@@ -276,6 +276,13 @@ describe("Create and Revoke Collateral Rental", () => {
     const checkIssuerTokenAccount = await rentalMint.getAccountInfo(
       issuerTokenAccountId
     );
-    expect(checkIssuerTokenAccount.amount.toNumber()).to.eq(1);
+    expect(checkIssuerTokenAccount.amount.toNumber()).to.eq(0);
+
+    const checkIssuerCollateralTokenAccount = await paymentMint.getAccountInfo(
+      await findAta(paymentMint.publicKey, provider.wallet.publicKey)
+    );
+    expect(checkIssuerCollateralTokenAccount.amount.toNumber()).to.eq(
+      RENTAL_PAYMENT_AMONT
+    );
   });
 });

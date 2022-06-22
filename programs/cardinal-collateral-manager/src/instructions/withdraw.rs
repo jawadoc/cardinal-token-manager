@@ -68,23 +68,25 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
                 if receipt_token_account.owner != return_token_account.owner {
                     return Err(error!(cardinal_error::InvalidReceiptMintOwner));
                 }
-
-                msg!("I am transferring tokens");
-        
-                let cpi_accounts = Transfer {
-                    from: ctx.accounts.recipient_token_account.to_account_info(),
-                    to: return_token_account_info.to_account_info(),
-                    authority: collateral_manager.to_account_info(),
-                };
-                let cpi_program = ctx.accounts.token_program.to_account_info();
-                let cpi_context = CpiContext::new(cpi_program, cpi_accounts).with_signer(collateral_manager_signer);
-                token::transfer(cpi_context, token_manager.amount)?;
             }
+
+            msg!("I am transferring tokens");
+    
+            let cpi_accounts = Transfer {
+                from: ctx.accounts.recipient_token_account.to_account_info(),
+                to: return_token_account_info.to_account_info(),
+                authority: collateral_manager.to_account_info(),
+            };
+            let cpi_program = ctx.accounts.token_program.to_account_info();
+            let cpi_context = CpiContext::new(cpi_program, cpi_accounts).with_signer(collateral_manager_signer);
+            token::transfer(cpi_context, token_manager.amount)?;
+            
         } else {
             let return_collateral_token_account = Account::<TokenAccount>::try_from(&ctx.accounts.return_collateral_token_account.to_account_info())?;
             if return_collateral_token_account.owner != token_manager.issuer {
                 return Err(error!(cardinal_error::InvalidIssuerTokenAccount));
             }
+
         }
     }
 
@@ -101,8 +103,7 @@ pub fn handler<'key, 'accounts, 'remaining, 'info>(ctx: Context<'key, 'accounts,
     token::transfer(cpi_context, collateral_manager.collateral_amount)?;
     msg!("I have transferred collateral");
 
-    collateral_manager.close(ctx.accounts.collector.to_account_info())?;
-
+    collateral_manager.state = CollateralManagerState::Withdrawn as u8;
     // close token_manager_token_account
     let cpi_accounts = CloseAccount {
         account: ctx.accounts.collateral_token_account.to_account_info(),
