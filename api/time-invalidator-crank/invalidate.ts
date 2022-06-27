@@ -4,14 +4,22 @@ import {
   tryGetAccount,
   withFindOrInitAssociatedTokenAccount,
 } from "@onchain_org/token-manager";
-import { timeInvalidator } from "@onchain_org/token-manager/dist/cjs/programs";
+import {
+  collateralManager,
+  timeInvalidator,
+} from "@onchain_org/token-manager/dist/cjs/programs";
 import { TimeInvalidatorData } from "@onchain_org/token-manager/dist/cjs/programs/timeInvalidator";
 import {
   TokenManagerData,
   TokenManagerState,
   withRemainingAccountsForReturn,
 } from "@onchain_org/token-manager/dist/cjs/programs/tokenManager";
-import { shouldTimeInvalidate } from "@cardinal/token-manager/dist/cjs/programs/timeInvalidator/utils";
+import { shouldTimeInvalidate } from "@onchain_org/token-manager/dist/cjs/programs/timeInvalidator/utils";
+import {
+  getReturnTokenAccount,
+  withRemainingAccountsForWithdraw,
+} from "@onchain_org/token-manager/dist/cjs/programs/collateralManager/utils";
+
 import { BN, utils } from "@project-serum/anchor";
 import { SignerWallet } from "@saberhq/solana-contrib";
 import {
@@ -27,32 +35,6 @@ import { connectionFor, secondaryConnectionFor } from "../common/connection";
 const wallet = Keypair.fromSecretKey(
   utils.bytes.bs58.decode(process.env.SOLANA_CRANK_KEY || "")
 );
-
-
-export const shouldTimeInvalidate = (
-  tokenManagerData: AccountData<TokenManagerData>,
-  timeInvalidatorData: AccountData<TimeInvalidatorData>
-): boolean => {
-  return Boolean(
-    tokenManagerData?.parsed.state !== TokenManagerState.Invalidated &&
-      ((timeInvalidatorData.parsed.maxExpiration &&
-        new BN(Date.now() / 1000).gte(
-          timeInvalidatorData.parsed.maxExpiration
-        )) ||
-        (timeInvalidatorData.parsed.expiration &&
-          tokenManagerData.parsed.state === TokenManagerState.Claimed &&
-          new BN(Date.now() / 1000).gte(
-            timeInvalidatorData.parsed.expiration
-          )) ||
-        (!timeInvalidatorData.parsed.expiration &&
-          tokenManagerData.parsed.state === TokenManagerState.Claimed &&
-          timeInvalidatorData.parsed.durationSeconds &&
-          new BN(Date.now() / 1000).gte(
-            tokenManagerData.parsed.stateChangedAt.add(
-              timeInvalidatorData.parsed.durationSeconds
-            )
-          ))))
-}
 
 const getSolanaClock = async (
   connection: Connection
@@ -110,20 +92,24 @@ const main = async (cluster: string) => {
       );
 
       const getPaidClaimApprover = await tryGetAccount(() =>
-      programs.claimApprover.accounts.getClaimApprover(
-        connection,
-        timeInvalidatorData.parsed.tokenManager
-      )
-    );
+        programs.claimApprover.accounts.getClaimApprover(
+          connection,
+          timeInvalidatorData.parsed.tokenManager
+        )
+      );
 
-      console.log(getPaidClaimApprover?.parsed.paymentManager.toBase58())
-      console.log(timeInvalidatorData.parsed?.expiration?.toNumber())
-      console.log(timeInvalidatorData.parsed?.extensionPaymentAmount?.toNumber())
-      console.log(timeInvalidatorData.parsed?.extensionDurationSeconds?.toNumber())
-      console.log(timeInvalidatorData.parsed?.durationSeconds?.toNumber())
-      console.log(timeInvalidatorData.parsed?.maxExpiration?.toNumber())
+      // console.log(getPaidClaimApprover?.parsed.paymentManager.toBase58());
+      // console.log(timeInvalidatorData.parsed?.expiration?.toNumber());
+      // console.log(
+      //   timeInvalidatorData.parsed?.extensionPaymentAmount?.toNumber()
+      // );
+      // console.log(
+      //   timeInvalidatorData.parsed?.extensionDurationSeconds?.toNumber()
+      // );
+      // console.log(timeInvalidatorData.parsed?.durationSeconds?.toNumber());
+      // console.log(timeInvalidatorData.parsed?.maxExpiration?.toNumber());
 
-      console.log(timeInvalidatorData.pubkey.toBase58())
+      // console.log(timeInvalidatorData.pubkey.toBase58());
 
       const transaction = new Transaction();
       if (!tokenManagerData) {
@@ -142,6 +128,65 @@ const main = async (cluster: string) => {
           solanaClock + (Date.now() / 1000 - startTime)
         )
       ) {
+        // Withdraw collateral
+        const collateralManagerData = await tryGetAccount(() =>
+          collateralManager.accounts.getCollateralManager(
+            connection,
+            timeInvalidatorData.parsed.tokenManager
+          )
+        );
+        if (collateralManagerData) {
+          const collateralManagerTokenAccountId =
+            await withFindOrInitAssociatedTokenAccount(
+              transaction,
+              connection,
+              collateralManagerData.parsed.collateralMint,
+              collateralManagerData.pubkey,
+              wallet.publicKey,
+              true
+            );
+
+          const returnCollateralTokenAccount = await getReturnTokenAccount(
+            transaction,
+            connection,
+            new SignerWallet(wallet),
+            collateralManagerData,
+            tokenManagerData,
+            true
+          );
+
+          const remainingAccountsForWithdraw =
+            await withRemainingAccountsForWithdraw(
+              transaction,
+              connection,
+              new SignerWallet(wallet),
+              tokenManagerData
+            );
+
+          transaction.add(
+            await collateralManager.instruction.withdraw(
+              connection,
+              new SignerWallet(wallet),
+              timeInvalidatorData.parsed.tokenManager,
+              collateralManagerTokenAccountId,
+              returnCollateralTokenAccount,
+              tokenManagerData?.parsed.recipientTokenAccount,
+              remainingAccountsForWithdraw
+            )
+          );
+        }
+
+        console.log("TX length", transaction.instructions.length);
+        console.log(timeInvalidatorData.parsed?.expiration?.toNumber());
+        console.log(
+          timeInvalidatorData.parsed?.extensionPaymentAmount?.toNumber()
+        );
+        console.log(
+          timeInvalidatorData.parsed?.extensionDurationSeconds?.toNumber()
+        );
+        console.log(timeInvalidatorData.parsed?.durationSeconds?.toNumber());
+        console.log(timeInvalidatorData.parsed?.maxExpiration?.toNumber());
+
         const tokenManagerTokenAccountId =
           await withFindOrInitAssociatedTokenAccount(
             transaction,
